@@ -5,4 +5,7 @@
                :catppuccin-latte
                :catppuccin-mocha]
  :after (fn [] (let [C (require :catppuccin)]
-                 (C.setup {:integrations {:lualine true}})))}
+                 (C.setup {:transparent_background true
+                           :float {:transparent true}
+                           :integrations {:lualine true
+                                          :snacks true}})))}

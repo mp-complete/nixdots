@@ -1,5 +1,5 @@
 ;; Seamless directional navigation and resizing of neovim splits +
-;; terminal multiplexer panes (tmux, wezterm, kitty). The multiplexer
+;; terminal multiplexer panes (tmux, kitty). The multiplexer
 ;; is auto-detected at runtime via env vars (e.g. $TMUX).
 ;;
 ;; Zellij integration is handled separately by zellij-nav.nvim, which

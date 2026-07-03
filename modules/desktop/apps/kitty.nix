@@ -23,6 +23,48 @@
         clipboard_control = "write-clipboard write-primary";
         strip_trailing_spaces = "smart";
 
+        # Soft, slow "pulsing" cursor: the easing function makes the blink fade
+        # in/out smoothly instead of a hard on/off flip, and the longer interval
+        # slows the whole cycle down. Keep blinking indefinitely (don't stop
+        # after idle).
+        cursor_blink_interval = "0.8 ease-in-out";
+        cursor_stop_blinking_after = 0;
+
+        # Window transparency + blur. Now that niri no longer fills the border
+        # color behind kitty (see draw-border-with-background rule in niri.nix),
+        # the wallpaper shows through. Blur uses the generic Wayland
+        # `ext-background-effect-v1` protocol, which niri 26.04 implements and
+        # kitty 0.46+ drives. dynamic_background_opacity lets us tweak opacity
+        # live (ctrl+shift+a > / < by default).
+        background_opacity = "0.8";
+        dynamic_background_opacity = true;
+        background_blur = 64;
+
+        # Smooth cursor motion: the cursor animates to its new position leaving a
+        # short trail instead of teleporting. cursor_trail is the "start" threshold
+        # (px) before the trail kicks in; keep it small so short hops still animate.
+        cursor_trail = 3;
+        cursor_trail_decay = "0.1 0.4";
+
+        # A little breathing room around the text.
+        window_padding_width = 8;
+
+        # Fade unfocused splits so the active pane stands out.
+        inactive_text_alpha = "0.4";
+
+        # Editor-style link styling.
+        url_style = "curly";
+
+        # Subtle, silent visual bell: a quick eased flash instead of a sound.
+        visual_bell_duration = "0.15 ease-in-out";
+        window_alert_on_bell = true;
+
+        # Cleaner, borderless windows (WM handles move/close).
+        hide_window_decorations = true;
+
+        # Slightly roomier line height for readability.
+        modify_font = "cell_height 115%";
+
         # lualine-style status bar: kitty's tab bar is fully programmable, so we
         # drive it from tab_bar.py (shipped below). `custom` style + min_tabs=1
         # keeps it always visible; templates handle the per-tab (left) titles.
@@ -97,7 +139,9 @@
         map --mode leader x close_tab
         map --mode leader shift+5 launch --location=vsplit --cwd=current
         map --mode leader shift+apostrophe launch --location=hsplit --cwd=current
-        ${lib.concatMapStringsSep "\n" (n: "map --mode leader ${toString n} goto_tab ${toString n}") (lib.range 1 9)}
+        ${lib.concatMapStringsSep "\n" (n: "map --mode leader ${toString n} goto_tab ${toString n}") (
+          lib.range 1 9
+        )}
       '';
     };
 

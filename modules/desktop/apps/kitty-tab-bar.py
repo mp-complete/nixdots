@@ -16,7 +16,7 @@ from kitty.utils import color_as_int
 
 REFRESH_SECONDS = 2.0
 GIT_GLYPH = "\ue0a0"  # powerline branch symbol (present in Nerd Fonts)
-LEADER_LAMP_BG = 0xed8796  # Catppuccin "red" accent, matches the wezterm lamp
+LEADER_LAMP_BG = 0xed8796  # Catppuccin "red" accent for the LEADER lamp
 
 
 def _read(path):
@@ -101,7 +101,7 @@ def _draw_right(draw_data, screen):
         return
     screen.cursor.x = x
     if mode_seg:
-        # LEADER lamp: accent background, matches the old wezterm status lamp.
+        # LEADER lamp: accent background for the tmux leader state.
         screen.cursor.fg = as_rgb(color_as_int(draw_data.default_bg))
         screen.cursor.bg = as_rgb(LEADER_LAMP_BG)
         screen.draw(mode_seg)

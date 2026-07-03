@@ -5,7 +5,7 @@
   options.terminal = {
     command = lib.mkOption {
       type = lib.types.str;
-      default = "wezterm";
+      default = "kitty";
       description = ''
         Bare command used to launch the default terminal (resolved on the
         session PATH). Read by i3, niri, rofi, etc.
@@ -13,11 +13,11 @@
     };
     exec = lib.mkOption {
       type = lib.types.str;
-      default = "wezterm -e";
+      default = "kitty -e";
       description = ''
         Command prefix used to run a program in a new terminal window, e.g.
-        `wezterm -e yazi`. wezterm accepts `-e` as a drop-in for the
-        kitty/xterm convention.
+        `kitty -e yazi`. kitty uses the `-e` convention for running a
+        program in a new window.
       '';
     };
   };

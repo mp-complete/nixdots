@@ -8,7 +8,12 @@
 #
 #   cliphist-cmd = "${pkgs.cliphist}/bin/cliphist list | rofi -dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy";
 # in
-{ config, lib, inputs, ... }:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 let
   flake = config.flake;
   terminal = config.terminal;
@@ -194,6 +199,16 @@ in
             geometry-corner-radius = 10;
             clip-to-geometry = true;
           }
+          # Transparent terminals: niri fills the border color *behind* a window
+          # that has no server-side decorations (kitty runs with
+          # hide_window_decorations, so niri treats it as CSD-less). That solid
+          # fill is what a semi-transparent kitty was compositing over instead of
+          # the wallpaper. Disabling draw-border-with-background makes the border
+          # a ring only, so kitty's transparency shows the actual wallpaper.
+          {
+            matches = [ { app-id = "^kitty$"; } ];
+            draw-border-with-background = false;
+          }
           {
             matches = [ { app-id = "pavucontrol"; } ];
             open-floating = true;
@@ -253,6 +268,15 @@ in
             action = a: v: { "${a}" = v; };
             columnWidth = s: action "set-column-width" s;
             columnHeight = s: action "set-window-height" s;
+            # Spawn a command, still usable while the screen is locked (media
+            # keys should work from the lock screen).
+            spawnLocked = cmd: _: {
+              props.allow-when-locked = true;
+              content.spawn = cmd;
+            };
+            pamixer = lib.getExe pkgs.pamixer;
+            playerctl = lib.getExe pkgs.playerctl;
+            brightnessctl = lib.getExe pkgs.brightnessctl;
           in
           {
             "Mod+Return".spawn = terminal.command;
@@ -351,6 +375,90 @@ in
             "Mod+Shift+L".focus-monitor-right = { };
             "Mod+Shift+S" = basicAction "screenshot";
             "Mod+Shift+Slash".show-hotkey-overlay = { };
+
+            # Media keys. Volume/mic/brightness allowed while locked; the
+            # +/- keys repeat while held.
+            "XF86AudioRaiseVolume" = spawnLocked [
+              pamixer
+              "-i"
+              "5"
+            ];
+            "XF86AudioLowerVolume" = spawnLocked [
+              pamixer
+              "-d"
+              "5"
+            ];
+            "XF86AudioMute" = spawnLocked [
+              pamixer
+              "-t"
+            ];
+            "XF86AudioMicMute" = spawnLocked [
+              pamixer
+              "--default-source"
+              "-t"
+            ];
+            "XF86MonBrightnessUp" = spawnLocked [
+              brightnessctl
+              "set"
+              "5%+"
+            ];
+            "XF86MonBrightnessDown" = spawnLocked [
+              brightnessctl
+              "set"
+              "5%-"
+            ];
+
+            # Playback controls (playerctl); no key repeat.
+            "XF86AudioPlay" = _: {
+              props = {
+                allow-when-locked = true;
+                repeat = false;
+              };
+              content.spawn = [
+                playerctl
+                "play-pause"
+              ];
+            };
+            "XF86AudioPause" = _: {
+              props = {
+                allow-when-locked = true;
+                repeat = false;
+              };
+              content.spawn = [
+                playerctl
+                "play-pause"
+              ];
+            };
+            "XF86AudioNext" = _: {
+              props = {
+                allow-when-locked = true;
+                repeat = false;
+              };
+              content.spawn = [
+                playerctl
+                "next"
+              ];
+            };
+            "XF86AudioPrev" = _: {
+              props = {
+                allow-when-locked = true;
+                repeat = false;
+              };
+              content.spawn = [
+                playerctl
+                "previous"
+              ];
+            };
+            "XF86AudioStop" = _: {
+              props = {
+                allow-when-locked = true;
+                repeat = false;
+              };
+              content.spawn = [
+                playerctl
+                "stop"
+              ];
+            };
           };
       };
     };
