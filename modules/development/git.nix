@@ -41,7 +41,7 @@
             navigate = true;
             dark = true;
             line-numbers = true;
-            syntax-theme = "Catppuccin Mocha";
+            syntax-theme = "Catppuccin Macchiato";
           };
         };
         ignores = [

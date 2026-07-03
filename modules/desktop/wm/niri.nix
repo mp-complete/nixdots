@@ -8,9 +8,10 @@
 #
 #   cliphist-cmd = "${pkgs.cliphist}/bin/cliphist list | rofi -dmenu | ${pkgs.cliphist}/bin/cliphist decode | ${pkgs.wl-clipboard}/bin/wl-copy";
 # in
-{ config, lib, ... }:
+{ config, lib, inputs, ... }:
 let
   flake = config.flake;
+  terminal = config.terminal;
 in
 {
   flake.wrappers.niri =
@@ -49,12 +50,24 @@ in
             top = 0;
             bottom = 0;
           };
-          center-focused-column = "on-overflow";
+          # "never" keeps columns packed/stable so a 50/50 (or 33/33/33) set
+          # stays side-by-side as you move focus between them, instead of
+          # re-centering and breaking up the pair. always-center-single-column
+          # still centers a lone column for a tidy solo view.
+          center-focused-column = "never";
+          always-center-single-column = { };
           preset-column-widths = [
             { proportion = 0.33333; }
             { proportion = 0.5; }
             { proportion = 0.66667; }
             { proportion = 1.0; }
+          ];
+          # Heights cycled by switch-preset-window-height (Mod+Shift+R) for a
+          # window stacked in a column.
+          preset-window-heights = [
+            { proportion = 0.33333; }
+            { proportion = 0.5; }
+            { proportion = 0.66667; }
           ];
           default-column-width.proportion = 0.5;
           focus-ring = {
@@ -62,9 +75,24 @@ in
           };
           border = {
             width = 0.5;
-            active-color = "#cba6f7";
-            inactive-color = "#585b70";
-            urgent-color = "#f38ba8";
+            active-color = "#c6a0f6";
+            inactive-color = "#5b6078";
+            urgent-color = "#ed8796";
+          };
+          # Tabbed columns (Mod+T) draw one segment per stacked window so you
+          # can see/count what's in the stack. Hidden for single-window columns.
+          tab-indicator = {
+            hide-when-single-tab = { };
+            place-within-column = { };
+            gap = 4;
+            width = 4;
+            length = _: { props.total-proportion = 0.5; };
+            position = "left";
+            gaps-between-tabs = 4;
+            corner-radius = 4;
+            active-color = "#c6a0f6";
+            inactive-color = "#5b6078";
+            urgent-color = "#ed8796";
           };
           shadow = {
             on = { };
@@ -77,8 +105,8 @@ in
               };
             };
             draw-behind-window = false;
-            color = "#1a1a2ecc";
-            inactive-color = "#1a1a2e66";
+            color = "#181926cc";
+            inactive-color = "#18192666";
           };
         };
 
@@ -157,7 +185,7 @@ in
             "store"
           ]
           [ "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1" ]
-          [ (lib.getExe (flake.wrappers.noctalia.wrap { inherit pkgs; })) ]
+          [ (lib.getExe inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default) ]
         ];
 
         window-rules = [
@@ -220,7 +248,6 @@ in
 
         binds =
           let
-            kitty = lib.getExe (flake.wrappers.kitty.wrap { inherit pkgs; });
             rofi = lib.getExe (flake.wrappers.rofi.wrap { inherit pkgs; });
             basicAction = a: { "${a}" = { }; };
             action = a: v: { "${a}" = v; };
@@ -228,9 +255,9 @@ in
             columnHeight = s: action "set-window-height" s;
           in
           {
-            "Mod+Return".spawn = kitty;
+            "Mod+Return".spawn = terminal.command;
             "Mod+E".spawn = [
-              kitty
+              terminal.command
               "-e"
               "yazi"
             ];
@@ -254,8 +281,16 @@ in
             "Mod+F" = basicAction "maximize-column";
             "Mod+Shift+F" = basicAction "fullscreen-window";
             "Mod+C" = basicAction "center-column";
+            # Center the whole visible group (e.g. a pair/triple) as a unit,
+            # rather than a single column like Mod+C.
+            "Mod+Shift+C" = basicAction "center-visible-columns";
+            # Grow the focused column into space left by other visible columns.
+            "Mod+G" = basicAction "expand-column-to-available-width";
             "Mod+Comma" = basicAction "consume-or-expel-window-left";
             "Mod+Period" = basicAction "consume-or-expel-window-right";
+            # Reorder columns within the workspace strip (swap with neighbor).
+            "Mod+Ctrl+H" = basicAction "move-column-left";
+            "Mod+Ctrl+L" = basicAction "move-column-right";
 
             # Workspaces
             "Mod+1" = action "focus-workspace" 1;
@@ -280,8 +315,17 @@ in
 
             # Column sizing
             "Mod+R" = basicAction "switch-preset-column-width";
+            # Width presets: Narrow / Split / Wide (Full lives on Mod+F).
+            "Mod+N" = columnWidth "33.3333%";
+            "Mod+S" = columnWidth "50%";
+            "Mod+W" = columnWidth "66.6666%";
             "Mod+Minus" = columnWidth "-10%";
             "Mod+Equal" = columnWidth "+10%";
+
+            # Window heights / distribution within a column
+            "Mod+Shift+R" = basicAction "switch-preset-window-height";
+            "Mod+Shift+K" = basicAction "move-window-up";
+            "Mod+Shift+J" = basicAction "move-window-down";
             "Mod+Shift+Minus" = columnHeight "-10%";
             "Mod+Shift+Equal" = columnHeight "+10%";
             "Mod+Tab".focus-workspace-down = { };
@@ -292,6 +336,17 @@ in
               content.toggle-overview = { };
             };
             "Mod+T".toggle-column-tabbed-display = { };
+            # Tabs: previous tab + jump to tab N within the focused column.
+            "Mod+P" = basicAction "focus-window-previous";
+            "Mod+Alt+1" = action "focus-window-in-column" 1;
+            "Mod+Alt+2" = action "focus-window-in-column" 2;
+            "Mod+Alt+3" = action "focus-window-in-column" 3;
+            "Mod+Alt+4" = action "focus-window-in-column" 4;
+            "Mod+Alt+5" = action "focus-window-in-column" 5;
+            "Mod+Alt+6" = action "focus-window-in-column" 6;
+            "Mod+Alt+7" = action "focus-window-in-column" 7;
+            "Mod+Alt+8" = action "focus-window-in-column" 8;
+            "Mod+Alt+9" = action "focus-window-in-column" 9;
             "Mod+Shift+H".focus-monitor-left = { };
             "Mod+Shift+L".focus-monitor-right = { };
             "Mod+Shift+S" = basicAction "screenshot";
@@ -347,13 +402,15 @@ in
     {
       imports = [
         flake.modules.homeManager.desktop-wayland
+        # noctalia 5.x via its upstream home-manager module (programs.noctalia).
+        flake.modules.homeManager.noctalia
       ];
 
       # niri itself comes from the system profile (above). The session shell
-      # (noctalia bar) and the lock screen are per-user.
+      # (noctalia bar, installed by the noctalia module above) and the lock
+      # screen are per-user.
       home.packages = [
         (flake.wrappers.swaylock.wrap { inherit pkgs; })
-        (flake.wrappers.noctalia.wrap { inherit pkgs; })
       ];
 
       # Live-apply config changes to a running niri after `nixos-rebuild

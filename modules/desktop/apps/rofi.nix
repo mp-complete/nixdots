@@ -1,3 +1,4 @@
+{ config, ... }:
 {
   flake.wrappers.rofi = { pkgs, wlib, ... }: {
     imports = [ wlib.wrapperModules.rofi ];
@@ -6,7 +7,7 @@
       icon-theme = "Papirus-Dark";
       display-drun = " ";
       drun-display-format = "{name}";
-      terminal = "kitty";
+      terminal = config.terminal.command;
     };
   };
 }

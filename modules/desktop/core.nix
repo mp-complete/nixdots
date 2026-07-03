@@ -44,8 +44,8 @@
       ];
 
       home.pointerCursor = {
-        name = "catppuccin-mocha-mauve-cursors";
-        package = pkgs.catppuccin-cursors.mochaMauve;
+        name = "catppuccin-macchiato-mauve-cursors";
+        package = pkgs.catppuccin-cursors.macchiatoMauve;
         size = 24;
         gtk.enable = true;
       };
@@ -53,17 +53,17 @@
       gtk = {
         enable = true;
         gtk4.theme = {
-          name = "catppuccin-mocha-mauve-standard+default";
+          name = "catppuccin-macchiato-mauve-standard+default";
           package = pkgs.catppuccin-gtk.override {
             accents = [ "mauve" ];
-            variant = "mocha";
+            variant = "macchiato";
           };
         };
         iconTheme = {
           name = "Papirus-Dark";
           package = pkgs.catppuccin-papirus-folders.override {
             accent = "mauve";
-            flavor = "mocha";
+            flavor = "macchiato";
           };
         };
       };

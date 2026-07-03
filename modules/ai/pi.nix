@@ -86,6 +86,8 @@ let
         # shell out to these. Appended to PATH, so a global install still
         # wins but the wrapper never depends on one being present.
         runtimePkgs = with pkgs; [
+          ripgrep # fast recursive search (rg) for the bash tool
+          fd # fast file finder for the bash tool
           jq # JSON wrangling for ad-hoc bash tool work
           gh # GitHub CLI for repo lookups / PR work
           lazygit # quick git TUI (extensions may shell out to it)

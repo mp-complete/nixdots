@@ -5,6 +5,7 @@
       fonts.enableDefaultPackages = true;
       fonts.fontDir.enable = true;
       fonts.packages = with pkgs; [
+        cozette
         font-awesome
         hack-font
         material-design-icons

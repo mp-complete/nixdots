@@ -42,7 +42,7 @@
         {
           plugin = catppuccin;
           configBefore = ''
-            set -g @catppuccin_flavour 'mocha'
+            set -g @catppuccin_flavour 'macchiato'
             set -g @catppuccin_window_status_style 'rounded'
 
             # Truncate long session names with an ellipsis so they don't

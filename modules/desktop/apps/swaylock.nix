@@ -20,18 +20,18 @@
       indicator-thickness = 7;
       indicator-caps-lock = true;
 
-      inside-color = "1e1e2ecc";
-      inside-clear-color = "1e1e2ecc";
-      inside-ver-color = "89b4facc";
-      inside-wrong-color = "f38ba8cc";
+      inside-color = "24273acc";
+      inside-clear-color = "24273acc";
+      inside-ver-color = "8aadf4cc";
+      inside-wrong-color = "ed8796cc";
 
-      ring-color = "cba6f7ff";
-      ring-clear-color = "a6e3a1ff";
-      ring-ver-color = "89b4faff";
-      ring-wrong-color = "f38ba8ff";
+      ring-color = "c6a0f6ff";
+      ring-clear-color = "a6da95ff";
+      ring-ver-color = "8aadf4ff";
+      ring-wrong-color = "ed8796ff";
 
-      key-hl-color = "89b4faff";
-      bs-hl-color = "f38ba8ff";
+      key-hl-color = "8aadf4ff";
+      bs-hl-color = "ed8796ff";
 
       line-color = "00000000";
       line-clear-color = "00000000";
@@ -40,12 +40,12 @@
 
       separator-color = "00000000";
 
-      text-color = "cdd6f4ff";
-      text-clear-color = "cdd6f4ff";
-      text-ver-color = "cdd6f4ff";
-      text-wrong-color = "cdd6f4ff";
+      text-color = "cad3f5ff";
+      text-clear-color = "cad3f5ff";
+      text-ver-color = "cad3f5ff";
+      text-wrong-color = "cad3f5ff";
 
-      text-caps-lock-color = "fab387ff";
+      text-caps-lock-color = "f5a97fff";
     };
   };
 }

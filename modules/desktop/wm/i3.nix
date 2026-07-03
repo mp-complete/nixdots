@@ -21,7 +21,7 @@
     { pkgs, ... }:
     let
       mod = "Mod4";
-      terminal = "kitty";
+      terminal = config.terminal.command;
       menu = "rofi -show drun -show-icons";
     in
     {

@@ -24,12 +24,12 @@
           notification_limit = 5;
           corner_radius = 14;
           frame_width = 2;
-          frame_color = ''"#cba6f7"'';
+          frame_color = ''"#c6a0f6"'';
           separator_height = 2;
-          separator_color = ''"#313244"'';
+          separator_color = ''"#363a4f"'';
           gap_size = 6;
-          background = ''"#1e1e2e"'';
-          foreground = ''"#cdd6f4"'';
+          background = ''"#24273a"'';
+          foreground = ''"#cad3f5"'';
           transparency = 0;
           font = ''"DepartureMono Nerd Font 11"'';
           markup = "full";
@@ -66,24 +66,24 @@
           mouse_right_click = ''"do_action, close_current"'';
         })
         (mkIniSection "urgency_low" {
-          background = ''"#1e1e2e"'';
-          foreground = ''"#bac2de"'';
-          frame_color = ''"#45475a"'';
-          highlight = ''"#cba6f7"'';
+          background = ''"#24273a"'';
+          foreground = ''"#b8c0e0"'';
+          frame_color = ''"#494d64"'';
+          highlight = ''"#c6a0f6"'';
           timeout = 5;
         })
         (mkIniSection "urgency_normal" {
-          background = ''"#1e1e2e"'';
-          foreground = ''"#cdd6f4"'';
-          frame_color = ''"#cba6f7"'';
-          highlight = ''"#cba6f7"'';
+          background = ''"#24273a"'';
+          foreground = ''"#cad3f5"'';
+          frame_color = ''"#c6a0f6"'';
+          highlight = ''"#c6a0f6"'';
           timeout = 8;
         })
         (mkIniSection "urgency_critical" {
-          background = ''"#1e1e2e"'';
-          foreground = ''"#cdd6f4"'';
-          frame_color = ''"#f38ba8"'';
-          highlight = ''"#f38ba8"'';
+          background = ''"#24273a"'';
+          foreground = ''"#cad3f5"'';
+          frame_color = ''"#ed8796"'';
+          highlight = ''"#ed8796"'';
           timeout = 0;
         })
       ];
