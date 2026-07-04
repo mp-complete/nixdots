@@ -1,4 +1,15 @@
 { mkHost, ... }:
+let
+  # Human-friendly monitor aliases. niri has no output-aliasing of its own, so
+  # we do it here: reference displays by these Nix-level names everywhere, and
+  # let each expand to the monitor's stable make/model/serial string (from
+  # `niri msg outputs`). make/model/serial is preferred over the connector name
+  # (DP-1/DP-2) because it survives replugging into a different port.
+  monitors = {
+    main = "ViewSonic Corporation VX3276-QHD V9W194342456"; # was DP-2
+    side = "ASUSTek COMPUTER INC VG27A NALMQS110328"; # was DP-1 (portrait)
+  };
+in
 {
   flake.nixosConfigurations.euler = mkHost {
     buckets = [
@@ -41,7 +52,8 @@
         # (nvidia env vars come from the `nvidia` bucket's sessionVariables.)
         desktop = {
           outputs = {
-            "DP-2" = {
+            # Main — ViewSonic VX3276-QHD
+            ${monitors.main} = {
               mode = "2560x1440@59.950";
               position = _: {
                 props = {
@@ -51,7 +63,8 @@
               };
               focus-at-startup = { };
             };
-            "DP-1" = {
+            # Side — ASUS VG27A (portrait)
+            ${monitors.side} = {
               mode = "2560x1440@143.970";
               position = _: {
                 props = {
@@ -62,13 +75,13 @@
               transform = "90";
             };
           };
-          # Bind all named workspaces to the primary monitor.
+          # Bind all named workspaces to the main monitor.
           workspaces = {
-            "1-main".open-on-output = "DP-2";
-            "2-browser".open-on-output = "DP-2";
-            "3-dev".open-on-output = "DP-2";
-            "4-chat".open-on-output = "DP-2";
-            "5-media".open-on-output = "DP-2";
+            "1-main".open-on-output = monitors.main;
+            "2-browser".open-on-output = monitors.main;
+            "3-dev".open-on-output = monitors.main;
+            "4-chat".open-on-output = monitors.main;
+            "5-media".open-on-output = monitors.main;
           };
         };
 

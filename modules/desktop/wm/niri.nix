@@ -315,6 +315,8 @@ in
             # Reorder columns within the workspace strip (swap with neighbor).
             "Mod+Ctrl+H" = basicAction "move-column-left";
             "Mod+Ctrl+L" = basicAction "move-column-right";
+            "Mod+Ctrl+Shift+H" = basicAction "move-window-to-monitor-left";
+            "Mod+Ctrl+Shift+L" = basicAction "move-window-to-monitor-right";
 
             # Workspaces
             "Mod+1" = action "focus-workspace" 1;
@@ -499,7 +501,22 @@ in
             };
           })
         ];
+        # Screen sharing (OBS, browsers, Zoom, …) on niri goes:
+        #   app -> xdg-desktop-portal -> xdg-desktop-portal-gnome (ScreenCast
+        #   impl) -> niri's org.gnome.Mutter.ScreenCast -> PipeWire stream.
+        # niri only implements the GNOME/Mutter screencast API, so the GNOME
+        # portal backend must own the ScreenCast/RemoteDesktop interfaces.
+        # desktop-core's `default = "*"` does NOT reliably expose ScreenCast
+        # here (xdg-desktop-portal 1.20 wildcard resolution), so pin the
+        # screen-capture interfaces to gnome explicitly for the niri desktop
+        # while leaving file-chooser/etc. on the nicer gtk backend.
         xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gnome ];
+        xdg.portal.config.niri = {
+          default = [ "gtk" ];
+          "org.freedesktop.impl.portal.ScreenCast" = [ "gnome" ];
+          "org.freedesktop.impl.portal.RemoteDesktop" = [ "gnome" ];
+          "org.freedesktop.impl.portal.Screenshot" = [ "gnome" ];
+        };
         # niri spawns polkit-gnome at startup; it needs the polkit daemon.
         security.polkit.enable = true;
       };

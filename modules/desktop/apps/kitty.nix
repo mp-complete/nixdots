@@ -86,6 +86,9 @@
       };
       env.KITTY_CONFIG_DIRECTORY = builtins.dirOf config.constructFiles.kittyConfig.path;
       keybindings = {
+        # Command palette
+        "kitty_mod+x" = "command_palette";
+
         # Pane navigation (tmux-like vim keys)
         "kitty_mod+h" = "neighboring_window left";
         "kitty_mod+j" = "neighboring_window down";
@@ -98,10 +101,8 @@
         "kitty_mod+up" = "neighboring_window up";
         "kitty_mod+right" = "neighboring_window right";
 
-        # Splits moved to the Ctrl+a leader (leader+% / leader+"), see
-        # extraConfig below. Removing the old kitty_mod+backslash / kitty_mod+minus
-        # bindings restores kitty's defaults for those keys (notably
-        # kitty_mod+minus = decrease_font_size).
+        # Window creation
+        "kitty_mod+return" = "launch --cwd current";
 
         # Layout switching
         "kitty_mod+space" = "next_layout";
@@ -129,20 +130,24 @@
       #   leader+%  vertical split   (US layout: shift+5)
       #   leader+"  horizontal split (US layout: shift+apostrophe)
       #   leader+1..9  switch to tab 1..9
-      extraConfig = ''
-        map --new-mode leader --on-action end --on-unknown end ctrl+a
-        map --mode leader ctrl+a send_key ctrl+a
-        map --mode leader g launch --type=overlay --cwd=current ${pkgs.lazygit}/bin/lazygit
-        map --mode leader z toggle_layout stack
-        map --mode leader r start_resizing_window
-        map --mode leader c launch --type=tab --cwd=current
-        map --mode leader x close_tab
-        map --mode leader shift+5 launch --location=vsplit --cwd=current
-        map --mode leader shift+apostrophe launch --location=hsplit --cwd=current
-        ${lib.concatMapStringsSep "\n" (n: "map --mode leader ${toString n} goto_tab ${toString n}") (
-          lib.range 1 9
-        )}
-      '';
+      extraConfig =
+        let
+          leader = "ctrl+a";
+        in
+        ''
+          map --new-mode leader --on-action end --on-unknown end ${leader}
+          map --mode leader ${leader} send_key ${leader}
+          map --mode leader g launch --type=tab --cwd=current ${pkgs.lazygit}/bin/lazygit
+          map --mode leader z toggle_layout stack
+          map --mode leader r start_resizing_window
+          map --mode leader c launch --type=tab --cwd=current
+          map --mode leader x close_tab
+          map --mode leader shift+5 launch --location=vsplit --cwd=current
+          map --mode leader shift+apostrophe launch --location=hsplit --cwd=current
+          ${lib.concatMapStringsSep "\n" (n: "map --mode leader ${toString n} goto_tab ${toString n}") (
+            lib.range 1 9
+          )}
+        '';
     };
 
   flake.modules.nixos.desktop-core =
