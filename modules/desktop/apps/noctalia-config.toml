@@ -1,0 +1,258 @@
+[backdrop]
+blur_intensity = 0.20999999530613422
+enabled = true
+tint_intensity = 0.41999999061226845
+
+[bar]
+order = [ "main" ]
+
+    [bar.default]
+    background_opacity = 0.4999999888241291
+    center = [ "clock", "cat_2" ]
+    end = [ "media", "tray", "notifications", "bluetooth", "clipboard", "volume", "control-center" ]
+    font_family = "DepartureMono Nerd Font Propo"
+    padding = 15
+    radius = 28
+    widget_spacing = 8
+
+[control_center]
+hidden_tabs = [ "monitor", "power", "network" ]
+sidebar = "full"
+sidebar_section = "none"
+
+    [[control_center.shortcuts]]
+    type = "bluetooth"
+
+    [[control_center.shortcuts]]
+    type = "caffeine"
+
+    [[control_center.shortcuts]]
+    type = "nightlight"
+
+    [[control_center.shortcuts]]
+    type = "notification"
+
+    [[control_center.shortcuts]]
+    type = "dark_mode"
+
+[desktop_widgets]
+schema_version = 2
+widget_order = [ "desktop-widget-0000000000000001", "desktop-widget-0000000000000002", "desktop-widget-0000000000000003" ]
+
+    [desktop_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [desktop_widgets.widget.desktop-widget-0000000000000001]
+    box_height = 144.0
+    box_width = 448.0
+    cx = 240.0
+    cy = 2460.0
+    output = "DP-1"
+    rotation = 0.0
+    type = "audio_visualizer"
+
+        [desktop_widgets.widget.desktop-widget-0000000000000001.settings]
+        background = false
+        bands = 100
+        color_2 = "secondary"
+        mirrored = true
+        show_when_idle = false
+
+    [desktop_widgets.widget.desktop-widget-0000000000000002]
+    box_height = 144.0
+    box_width = 208.0
+    cx = 1312.0
+    cy = 2460.0
+    output = "DP-1"
+    rotation = 0.0
+    type = "clock"
+
+        [desktop_widgets.widget.desktop-widget-0000000000000002.settings]
+        background = false
+        center_text = true
+        clock_style = "digital"
+        color = "primary"
+        shadow = false
+
+    [desktop_widgets.widget.desktop-widget-0000000000000003]
+    box_height = 0.0
+    box_width = 0.0
+    cx = 637.0
+    cy = 2460.0
+    output = "DP-1"
+    rotation = 0.0
+    type = "media_player"
+
+        [desktop_widgets.widget.desktop-widget-0000000000000003.settings]
+        background = false
+        font_family = "Noto Color Emoji"
+        hide_when_no_media = true
+        shadow = false
+
+[dock]
+auto_hide = true
+
+[idle]
+behavior_order = [ "lock", "screen-off", "lock-and-suspend" ]
+pre_action_fade_seconds = 5
+
+    [idle.behavior.lock]
+    action = "lock"
+    enabled = true
+    timeout = 600.0
+
+    [idle.behavior.lock-and-suspend]
+    action = "lock_and_suspend"
+    enabled = false
+    timeout = 900.0
+
+    [idle.behavior.screen-off]
+    action = "screen_off"
+    enabled = true
+    timeout = 660.0
+
+[location]
+address = "Evanston, United States"
+
+[lockscreen_widgets]
+enabled = false
+schema_version = 2
+widget_order = [ "lockscreen-login-box@winit", "lockscreen-login-box@DP-2", "lockscreen-login-box@DP-1" ]
+
+    [lockscreen_widgets.grid]
+    cell_size = 16
+    major_interval = 4
+    visible = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@DP-1"]
+    box_height = 70.0
+    box_width = 400.0
+    cx = 720.0
+    cy = 2441.0
+    output = "DP-1"
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@DP-1".settings]
+        background_color = "surface_variant"
+        background_opacity = 0.88
+        background_radius = 12.0
+        input_opacity = 1.0
+        input_radius = 6.0
+        show_login_button = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@DP-2"]
+    box_height = 70.0
+    box_width = 400.0
+    cx = 1280.0
+    cy = 1321.0
+    output = "DP-2"
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@DP-2".settings]
+        background_color = "surface_variant"
+        background_opacity = 0.88
+        background_radius = 12.0
+        input_opacity = 1.0
+        input_radius = 6.0
+        show_login_button = true
+
+    [lockscreen_widgets.widget."lockscreen-login-box@winit"]
+    box_height = 70.0
+    box_width = 400.0
+    cx = 635.0
+    cy = 1279.0
+    output = "winit"
+    rotation = 0.0
+    type = "login_box"
+
+        [lockscreen_widgets.widget."lockscreen-login-box@winit".settings]
+        background_color = "surface_variant"
+        background_opacity = 0.88
+        background_radius = 12.0
+        input_opacity = 1.0
+        input_radius = 6.0
+        show_login_button = true
+
+[nightlight]
+enabled = true
+
+[plugins]
+enabled = [ "noctalia/wallhaven", "noctalia/bongocat" ]
+
+[shell]
+font_family = "DepartureMono Nerd Font Mono"
+screen_time_enabled = true
+
+    [shell.panel]
+    borders = false
+    control_center_placement = "floating"
+    open_near_click_control_center = true
+    open_near_click_launcher = true
+    transparency_mode = "glass"
+
+    [shell.screen_corners]
+    enabled = true
+    size = 15
+
+[theme]
+builtin = "Rosé Pine"
+community_palette = "Neon Surf"
+mode = "dark"
+source = "wallpaper"
+wallpaper_scheme = "soft"
+
+    [theme.templates]
+    community_ids = [ "rofi" ]
+    enable_builtin_templates = false
+    enable_community_templates = false
+
+[wallpaper]
+directory = "/home/miles/Pictures/Wallpapers"
+per_monitor_directories = true
+transition_duration = 1100
+
+    [wallpaper.default]
+    path = "/home/miles/Pictures/Wallpapers/Horizontal/cassette.png"
+
+    [wallpaper.last]
+    path = "/home/miles/Pictures/Wallpapers/Horizontal/moonrise.jpeg"
+
+    [wallpaper.monitor.DP-1]
+    directory = "/home/miles/Pictures/Wallpapers/Vertical"
+
+    [wallpaper.monitor.DP-2]
+    directory = "/home/miles/Pictures/Wallpapers/Horizontal"
+
+    [wallpaper.monitors.DP-1]
+    path = "/home/miles/Pictures/Wallpapers/Vertical/Crossing.png"
+
+    [wallpaper.monitors.DP-2]
+    path = "/home/miles/Pictures/Wallpapers/Horizontal/moonrise.jpeg"
+
+    [[wallpaper.favorite]]
+    palette_source = "wallpaper"
+    path = "/home/miles/Pictures/Wallpapers/Horizontal/space_nord.png"
+    theme_mode = "light"
+    wallpaper_scheme = "m3-monochrome"
+
+[widget.Rofi]
+command = "rofi"
+type = "custom_button"
+
+[widget.bluetooth]
+scale = 1.1000000000000001
+
+[widget.cat]
+input_devices = [ "/dev/input/by-id/usb-liliums_Lily58-event-kbd" ]
+type = "noctalia/bongocat:cat"
+
+[widget.cat_2]
+input_devices = [ "/dev/input/by-id/usb-liliums_Lily58-event-kbd" ]
+type = "noctalia/bongocat:cat"
+
+[widget.tray]
+hidden = [ "Network", "Blueman" ]
