@@ -34,6 +34,7 @@ in
     ];
     modules = [
       ./euler/_hardware.nix
+      ./euler/_display-edid.nix
       {
         networking.hostName = "euler";
         networking.firewall.allowedTCPPorts = [ 8080 ];
