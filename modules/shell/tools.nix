@@ -7,6 +7,8 @@
         defaultCommand = "fd --type f";
         enableBashIntegration = true;
         enableFishIntegration = true;
+        # Yield Ctrl-R to atuin, which owns shell history search here.
+        historyWidget.command = "";
       };
       programs.zoxide = {
         enable = true;
