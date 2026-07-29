@@ -17,6 +17,7 @@ let
     "rpiv-ask-user-question" # structured questionnaire for the model
     "edb-agent-steer" # steer / queue / discard / edit mid-turn messages
     "pi-interview" # interview-mode extension
+    "pi-hermes-memory" # persistent memory, session search, and secret scanning
     "pi-copilot-discovery" # dynamic GitHub Copilot model discovery
     "context-mode" # context window optimization and MCP tool bridge
   ];
