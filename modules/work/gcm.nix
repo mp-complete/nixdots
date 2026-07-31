@@ -26,5 +26,10 @@
           [ -d "$d" ] && export PATH="$PATH:$d"
         done
       '';
+      shell.fishInitExtra = ''
+        for d in $HOME/.config/*/CurrentVersion
+          test -d $d; and fish_add_path $d
+        end
+      '';
     };
 }

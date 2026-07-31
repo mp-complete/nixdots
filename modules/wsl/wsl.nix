@@ -59,5 +59,6 @@
         xdg-utils
       ];
       shell.initExtra = "export WSL=1";
+      shell.fishInitExtra = "set -gx WSL 1";
     };
 }

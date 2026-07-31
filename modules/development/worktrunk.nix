@@ -63,6 +63,9 @@
       shell.initExtra = ''
         eval "$(${config.flake.wrappers.worktrunk.wrap { inherit pkgs; }}/bin/wt config shell init bash)"
       '';
+      shell.fishInitExtra = ''
+        ${config.flake.wrappers.worktrunk.wrap { inherit pkgs; }}/bin/wt config shell init fish | source
+      '';
       shell.aliases = {
         wt-sesh = "wt switch --no-cd -x 'sesh connect {{ worktree_path }}' $(git branch | fzf | cut -c 3-)";
         wtc = "wt switch --no-cd -x 'sesh connect {{ worktree_path }}' -c";

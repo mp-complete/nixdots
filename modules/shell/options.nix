@@ -13,7 +13,15 @@
         initExtra = lib.mkOption {
           type = lib.types.lines;
           default = "";
-          description = "Extra init for POSIX shells.";
+          description = "Extra init for POSIX shells (bash syntax).";
+        };
+        fishInitExtra = lib.mkOption {
+          type = lib.types.lines;
+          default = "";
+          description = ''
+            Extra init for fish (fish syntax). fish gets this instead of
+            `initExtra`, whose POSIX/bash syntax is invalid in fish.
+          '';
         };
         envExtra = lib.mkOption {
           type = lib.types.attrsOf lib.types.str;

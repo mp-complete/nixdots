@@ -6,7 +6,7 @@
         enable = true;
         generateCompletions = true;
         shellAliases = config.shell.aliases;
-        shellInit = config.shell.initExtra;
+        shellInit = config.shell.fishInitExtra;
         plugins = [
           {
             name = "fzf-fish";
