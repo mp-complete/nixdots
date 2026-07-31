@@ -120,12 +120,18 @@ let
     yaml-language-server
     basedpyright
     ruff
+    # C#/.NET — for legacy .NET Framework (non-SDK) projects built with
+    # mono. Note: this is the CoreCLR build of omnisharp-roslyn, so it
+    # resolves MSBuild via dotnet-SDK, not mono; see lsp/omnisharp.lua for
+    # how it's pointed at mono's reference assemblies.
+    omnisharp-roslyn
 
     # Formatters
     fnlfmt
     nixfmt
     prettierd
     stylua
+    csharpier
 
     # Linters
     statix

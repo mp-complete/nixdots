@@ -13,6 +13,7 @@
                                        :typescriptreact [:eslint_d :prettierd]
                                        :json [:prettierd]
                                        :jsonc [:prettierd]
+                                       :cs [:csharpier]
                                        :yaml [:prettierd]
                                        :html [:prettierd]
                                        :css [:prettierd]

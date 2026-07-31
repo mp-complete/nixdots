@@ -40,8 +40,28 @@
 (vim.lsp.config :basedpyright {})
 (vim.lsp.config :ruff {})
 
+;; OmniSharp (C#/.NET). omnisharp-extended rewires goto/references so they
+;; can descend into decompiled metadata / external assemblies.
+(vim.lsp.config :omnisharp
+                {:on_attach (fn [client buf]
+                              (attach-base client buf)
+                              (let [km (require :lib.keymap)
+                                    ext (require :omnisharp_extended)]
+                                (km.map :gd #(ext.lsp_definition)
+                                        {:desc "Goto Definition (OmniSharp)"
+                                         :buffer buf})
+                                (km.map :grr #(ext.lsp_references)
+                                        {:desc "References (OmniSharp)"
+                                         :buffer buf})
+                                (km.map :gI #(ext.lsp_implementation)
+                                        {:desc "Goto Implementation (OmniSharp)"
+                                         :buffer buf})
+                                (km.map :<leader>cD #(ext.lsp_type_definition)
+                                        {:desc "Type Definition (OmniSharp)"
+                                         :buffer buf})))})
+
 (vim.lsp.enable [:luals :fennel-ls :nixd :ts_ls :clojure_lsp :jsonls :yamlls
-                 :basedpyright :ruff])
+                 :basedpyright :ruff :omnisharp])
 
 ;; Default inlay hints
 (vim.lsp.inlay_hint.enable true)

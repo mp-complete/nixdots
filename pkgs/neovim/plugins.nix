@@ -57,6 +57,10 @@ in
 
     # Schema catalog for JSON/YAML LSPs (OpenAPI, etc.)
     SchemaStore-nvim
+
+    # Library plugin required synchronously in the OmniSharp LSP on_attach;
+    # must be on the rtp before the server attaches (no setup needed).
+    omnisharp-extended-lsp-nvim
   ];
 
   # Plugins loaded on demand via lze (packadd).
