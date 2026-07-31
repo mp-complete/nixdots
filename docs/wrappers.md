@@ -34,8 +34,7 @@ by hand (see below). We accepted that cost on purpose.
 
 ```
 modules/flake/wrappers.nix     # imports flakeModules.wrappers; defines flake.wrappers.*;
-                               # keeps the NON-wrapper base overlays (pi-coding-agent,
-                               # piExtensions, edge-bridge); sets perSystem.wrappers.pkgs
+                               # sets perSystem.wrappers.pkgs
 wrappers/<tool>/<tool>.nix     # the wrapper MODULE: { pkgs, wlib, ... }: { imports=[…]; package=…; … }
 wrappers/<tool>/module.nix     # reusable option-defining module (hunk, worktrunk, pi)
 modules/<area>/<feature>.nix   # consumers: config.flake.wrappers.<n>.wrap { inherit pkgs; }
@@ -56,8 +55,8 @@ modules/flake/packages.nix     # nvim (callPackage) + pi-upstream; everything el
 - **pi variant chain**: composed at the **module level** in `modules/ai/pi.nix` —
   `pi-desktop`/`pi-wsl` share one inline wrapper module (a `mkPi extNames` helper)
   rather than wrapping a base wrapper, so each variant is a single flat wrapper
-  (not a wrapper-of-a-wrapper). Each pins `pi-coding-agent` via `pkgs.extend`
-  of `overlays/pi-coding-agent.nix` (self-contained; no global nixpkgs mutation).
+  (not a wrapper-of-a-wrapper). Each uses the wrap-time nixpkgs
+  `pkgs.pi-coding-agent` directly.
 - **pi extensions**: declared as pure-data specs in `pi.extensions.<name>`
   (one file per extension under `modules/ai/extensions/`), built lazily by
   `flake.lib.buildPiExtension pkgs spec` at wrap-time — so extensions never

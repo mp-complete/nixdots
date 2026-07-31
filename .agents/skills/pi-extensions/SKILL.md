@@ -170,11 +170,10 @@ See `agent-browser-edge-bridge.nix` + `_local/agent-browser-edge-bridge/`.
 
 - `modules/ai/pi.nix` defines two first-class wrappers via a shared
   inline module: `flake.wrappers.pi-desktop` and `flake.wrappers.pi-wsl`
-  (auto-exposed as `.#pi-desktop` / `.#pi-wsl`). Each pins
-  `pi-coding-agent` via `pkgs.extend` of `overlays/pi-coding-agent.nix`
-  (self-contained; no global nixpkgs mutation), adds a `runtimePkgs`
-  CLI baseline, appends `modules/ai/AGENTS.md`, and builds its extension
-  set into `--extension` flags.
+  (auto-exposed as `.#pi-desktop` / `.#pi-wsl`). Each uses the wrap-time
+  nixpkgs `pkgs.pi-coding-agent`, adds a `runtimePkgs` CLI baseline,
+  appends `modules/ai/AGENTS.md`, and builds its extension set into
+  `--extension` flags.
 - **Install gating is strict "ai AND <platform>"**: `modules/ai/pi.nix`
   declares `pi.enable` in the always-imported `base` HM bucket; the `ai`
   bucket sets `pi.enable = true`; the `desktop-core` bucket installs

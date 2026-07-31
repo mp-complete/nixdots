@@ -1,6 +1,6 @@
 { inputs, config, ... }:
 {
-  # nvim (a callPackage, not a wrapper) plus the raw version-pinned upstream pi.
+  # nvim (a callPackage, not a wrapper) plus the raw nixpkgs pi package.
   # The wrapped tools (tmux, yazi, hunk, worktrunk, pi-desktop, pi-wsl, …) are
   # exposed automatically as `packages.<system>.<name>` by each feature's
   # `flake.wrappers` entry — e.g. `nix run .#tmux`, `nix build .#pi-wsl`.

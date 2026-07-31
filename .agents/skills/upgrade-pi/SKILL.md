@@ -8,14 +8,14 @@ metadata:
   version: "1.0"
 ---
 
-# Upgrade pinned pi-coding-agent version
+# Upgrade pi-coding-agent ahead of nixpkgs
 
-nixpkgs lags behind upstream pi releases. This repo pins a newer version
-via `overlays/pi-coding-agent.nix`, which `overrideAttrs` the nixpkgs
-`pi-coding-agent` with a fresh `src` + `npmDeps` hash. The build itself
-(buildPhase, postInstall, …) is reused from nixpkgs unchanged.
+This repo normally uses nixpkgs `pi-coding-agent` directly. Add a temporary
+`overlays/pi-coding-agent.nix` only when the user requests an upstream release
+newer than nixpkgs. The overlay reuses the nixpkgs build expression, so every
+version-coupled source and hash in that expression must be overridden.
 
-The target version comes from the user (e.g. "upgrade pi to 0.79.4").
+The target version comes from the user (e.g. "upgrade pi to 0.84.0").
 
 ## Procedure
 
@@ -30,20 +30,27 @@ nix-prefetch-url --unpack \
 
 ### 2. Update the overlay
 
-Edit `overlays/pi-coding-agent.nix`: set `version`, the src `hash` (from
-step 1), and reset the `npmDeps` `outputHash` to a fake placeholder so the
-build reports the real one:
+Create or edit `overlays/pi-coding-agent.nix`: set `version`, the source
+`hash` (from step 1), and reset the `npmDeps` `outputHash` to a fake
+placeholder so the build reports the real one:
 
 ```nix
 outputHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 ```
 
+First inspect the current nixpkgs package expression via
+`pkgs.pi-coding-agent.meta.position`. Override any additional version-coupled
+fetches it defines. For example, current nixpkgs has a `modelData` npm tarball
+whose URL and hash must match the requested version; failing to override it
+causes a tarball hash mismatch or extracts the wrong release layout.
+
 If the overlay doesn't exist yet, create it overriding
-`prev.pi-coding-agent` (version + `src` via `fetchFromGitHub` + `npmDeps`
-via `old.npmDeps.overrideAttrs { inherit src; outputHash = …; }`) and wire
-`(import ./overlays/pi-coding-agent.nix)` into **both** overlay lists in
-`flake.nix` (the per-system `eachDefaultSystem` list and the
-`nixosConfigurations` list), ordered before `(wrappers.overlay wlib)`.
+`prev.pi-coding-agent`, then use it in both consumers:
+
+- `modules/ai/pi.nix`: set the wrapper package to
+  `(pkgs.extend piOverlay).pi-coding-agent`.
+- `modules/flake/packages.nix`: add the overlay to the local nixpkgs import so
+  `pi-upstream` exposes the same version.
 
 ### 3. Get the npmDeps hash from the build
 
@@ -51,7 +58,7 @@ New files must be `git add`ed or Nix can't see them (flake = git tree).
 
 ```bash
 git add overlays/pi-coding-agent.nix
-nix build --no-link .#pi 2>&1 | tail -20
+nix build --no-link .#pi-wsl 2>&1 | tail -20
 ```
 
 Copy the `got:` hash from the "hash mismatch in fixed-output derivation"
@@ -60,16 +67,16 @@ error into the overlay's `outputHash`, replacing the placeholder.
 ### 4. Verify
 
 ```bash
-nix fmt -- overlays/pi-coding-agent.nix flake.nix
-nix build --no-link .#pi && nix eval --raw .#packages.x86_64-linux.pi.version
-nix build --no-link .#pi-wsl   # extension bundle still builds
+nix fmt overlays/pi-coding-agent.nix modules/ai/pi.nix modules/flake/packages.nix
+nix build --no-link .#pi-wsl
+nix eval --raw .#packages.x86_64-linux.pi-upstream.version
 ```
 
 The version eval must print the requested version.
 
 ## Notes
 
-- Once nixos-unstable ships this version, the override can be deleted (and
-  its two `flake.nix` references removed).
-- Only `src` and `npmDeps` change between bumps; everything else in the
-  overlay stays put.
+- Once nixos-unstable ships this version, delete the overlay and restore both
+  consumers to direct `pkgs.pi-coding-agent` use.
+- Never assume only `src` and `npmDeps` change; re-check the current nixpkgs
+  expression for new version-coupled fetches on every bump.
