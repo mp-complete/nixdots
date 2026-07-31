@@ -102,6 +102,10 @@
           wt list --format json | jq \'map(.branch).[]\' -r | gum filter --limit 1 --no-sort --fuzzy --placeholder 'Pick a branch' --height 50
         )\""
 
+        bind C-n display-popup -E -w 20% "wt switch --no-cd -x \'sesh connect {{ worktree_path }}\' -c \"$(
+          gum input --placeholder 'New branch name' --height 10
+        )\""
+
         # smart-splits.nvim integration: seamless nav + resize between
         # tmux panes and nvim splits. Forwards C-hjkl / M-hjkl to nvim
         # when the focused pane is running (n)vim; otherwise selects or
