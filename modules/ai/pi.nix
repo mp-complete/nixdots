@@ -20,6 +20,7 @@ let
     "pi-hermes-memory" # persistent memory, session search, and secret scanning
     "pi-copilot-discovery" # dynamic GitHub Copilot model discovery
     "context-mode" # context window optimization and MCP tool bridge
+    "pi-nested-agent-md" # inject nested AGENTS.md instructions on file reads
   ];
   wslExtensions = desktopExtensions ++ [
     "pi-wsl-images" # Alt+V image paste from the Windows clipboard
