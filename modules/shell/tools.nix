@@ -2,6 +2,8 @@
   flake.modules.homeManager.base =
     { pkgs, ... }:
     {
+      home.shellAliases.fzfp = "fzf --preview 'bat --color=always {}' --preview-window '~3'";
+
       programs.fzf = {
         enable = true;
         defaultCommand = "fd --type f";

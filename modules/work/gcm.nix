@@ -21,12 +21,12 @@
       };
 
       # PathInstaller-managed tools install to ~/.config/<tool>/CurrentVersion
-      shell.initExtra = ''
+      programs.bash.initExtra = ''
         for d in "$HOME"/.config/*/CurrentVersion; do
           [ -d "$d" ] && export PATH="$PATH:$d"
         done
       '';
-      shell.fishInitExtra = ''
+      programs.fish.shellInit = ''
         for d in $HOME/.config/*/CurrentVersion
           test -d $d; and fish_add_path $d
         end

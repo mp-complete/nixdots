@@ -60,13 +60,13 @@
   flake.modules.homeManager.dev =
     { pkgs, ... }:
     {
-      shell.initExtra = ''
+      programs.bash.initExtra = ''
         eval "$(${config.flake.wrappers.worktrunk.wrap { inherit pkgs; }}/bin/wt config shell init bash)"
       '';
-      shell.fishInitExtra = ''
+      programs.fish.shellInit = ''
         ${config.flake.wrappers.worktrunk.wrap { inherit pkgs; }}/bin/wt config shell init fish | source
       '';
-      shell.aliases = {
+      home.shellAliases = {
         wt-sesh = "wt switch --no-cd -x 'sesh connect {{ worktree_path }}' $(git branch | fzf | cut -c 3-)";
         wtc = "wt switch --no-cd -x 'sesh connect {{ worktree_path }}' -c";
       };
