@@ -10,6 +10,8 @@
 
       home.sessionVariables.GCM_CREDENTIAL_STORE = "gpg";
       programs.git.settings.credential = {
+        # Default helper: Git Credential Manager for everything (Azure DevOps, etc).
+        # github.com is overridden to use gh in development/git.nix.
         helper = "${pkgs.git-credential-manager}/bin/git-credential-manager";
         useHttpPath = true;
         # The powerbi Azure DevOps org disables PAT creation
