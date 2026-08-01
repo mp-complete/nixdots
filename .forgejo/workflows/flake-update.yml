@@ -1,0 +1,39 @@
+name: flake-update
+
+on:
+  workflow_dispatch: # manual trigger
+  schedule:
+    # Weekly, Sundays at 01:00 America/Chicago (CRON_TZ handles DST).
+    - cron: "CRON_TZ=America/Chicago 0 1 * * 0"
+
+jobs:
+  flake-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: https://github.com/DeterminateSystems/nix-installer-action@main
+
+      - name: Update flake inputs
+        run: nix flake update
+
+      - name: Check flake (evaluation only)
+        # --no-build validates that all flake outputs evaluate without building
+        # the (very large) NixOS/home-manager closures.
+        run: nix flake check --no-build
+
+      - name: Commit and push if flake.lock changed
+        run: |
+          if git diff --quiet -- flake.lock; then
+            echo "flake.lock unchanged — nothing to do."
+            exit 0
+          fi
+          git config user.name "forgejo-actions[bot]"
+          git config user.email "actions@git.opencurry.xyz"
+          git add flake.lock
+          git commit -m "chore(flake): weekly nix flake update"
+          git push
