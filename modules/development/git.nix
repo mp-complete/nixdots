@@ -91,6 +91,7 @@
       programs.lazygit.enable = true;
       home.packages = [
         pkgs.delta
-      ] ++ lib.optional (config.git.forgejoUrls != [ ]) pkgs.git-credential-oauth;
+      ]
+      ++ lib.optional (config.git.forgejoUrls != [ ]) pkgs.git-credential-oauth;
     };
 }

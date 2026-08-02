@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, config, ... }:
 {
   # nvim (a callPackage, not a wrapper) plus the raw version-pinned upstream pi.
   # The wrapped tools (tmux, yazi, hunk, worktrunk, pi-desktop, pi-wsl, …) are
@@ -11,7 +11,6 @@
         inherit system;
         config.allowUnfree = true;
         overlays = [
-          (import ../../overlays/pi-coding-agent.nix)
           (final: _prev: {
             nvim = final.callPackage ../../pkgs/neovim {
               inherit (inputs) fennel-ls-nvim-docs;
@@ -28,7 +27,7 @@
     {
       packages = {
         inherit (pkgs) nvim;
-        pi-upstream = pkgs.pi-coding-agent;
+        pi-upstream = inputs.llm-agents.packages.${system}.pi;
       };
 
       apps = {

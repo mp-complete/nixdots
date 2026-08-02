@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, inputs, ... }:
 let
   # Flake-parts top-level config (extension registry + buildPiExtension live
   # here). Aliased so the wrapper/home-manager submodules below can reach it
@@ -6,11 +6,6 @@ let
   outer = config;
 
   agentsMd = builtins.readFile ./AGENTS.md;
-
-  # Pin pi newer than nixpkgs, applied locally so the wrapper is
-  # self-contained (no global host-nixpkgs mutation; same pinned build in the
-  # standalone `.#pi-*` packages and in host installs).
-  piOverlay = import ../../overlays/pi-coding-agent.nix;
 
   # Extension sets per variant, by registry name (see modules/ai/extensions/).
   # Mirrors the old baseline + extensions-base (+ extensions-wsl) bundles.
@@ -23,6 +18,7 @@ let
     "edb-agent-steer" # steer / queue / discard / edit mid-turn messages
     "pi-interview" # interview-mode extension
     "pi-copilot-discovery" # dynamic GitHub Copilot model discovery
+    "context-mode" # context window optimization and MCP tool bridge
   ];
   wslExtensions = desktopExtensions ++ [
     "pi-wsl-images" # Alt+V image paste from the Windows clipboard
@@ -80,7 +76,7 @@ let
       };
 
       config = {
-        package = (pkgs.extend piOverlay).pi-coding-agent;
+        package = inputs.llm-agents.packages.${pkgs.system}.pi;
 
         # Self-contained: pi's built-in `bash` tool and several extensions
         # shell out to these. Appended to PATH, so a global install still
