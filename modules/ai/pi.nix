@@ -75,8 +75,23 @@ let
         '';
       };
 
+      options.configDir = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "$HOME/.config/pi";
+        description = ''
+          Override pi's config directory (where `agent/`, sessions, auth,
+          packages, etc. live). When non-null, the wrapper sets
+          `PI_CODING_AGENT_DIR` for the executable. The value is expanded at
+          runtime, so shell variables such as `$HOME` or `$XDG_CONFIG_HOME`
+          are ok. Pair this with `binName` to produce separately named pi
+          executables (e.g. `pi-msft` -> `$HOME/.config/pi-msft`). An
+          explicitly set `PI_CODING_AGENT_DIR` in the environment wins.
+        '';
+      };
+
       config = {
-        package = inputs.llm-agents.packages.${pkgs.system}.pi;
+        package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi;
 
         # Self-contained: pi's built-in `bash` tool and several extensions
         # shell out to these. Appended to PATH, so a global install still
@@ -117,6 +132,19 @@ let
           ifs = null;
           data = map toString config.extensions;
         };
+
+        # Optional override of the pi config directory for this executable.
+        envDefault.PI_CODING_AGENT_DIR = lib.mkIf (config.configDir != null) {
+          data = config.configDir;
+          esc-fn = x: x;
+        };
+
+        # When the wrapper is renamed (e.g. to `pi-msft`), drop the original
+        # unwrapped `bin/pi` symlink so the final package only contains the
+        # requested executable.
+        filesToExclude = lib.mkIf (config.binName != baseNameOf config.exePath) [
+          config.exePath
+        ];
       };
     };
 in
@@ -148,7 +176,14 @@ in
       ...
     }:
     lib.mkIf config.pi.enable {
-      home.packages = [ (outer.flake.wrappers.pi-desktop.wrap { inherit pkgs; }) ];
+      home.packages = [
+        (outer.flake.wrappers.pi-desktop.wrap { inherit pkgs; })
+        (outer.flake.wrappers.pi-desktop.wrap {
+          inherit pkgs;
+          binName = "pi-msft";
+          configDir = "${config.home.homeDirectory}/.config/pi-msft";
+        })
+      ];
     };
 
   # ai AND wsl  -> pi-wsl
