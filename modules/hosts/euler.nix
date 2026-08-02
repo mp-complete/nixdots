@@ -31,6 +31,7 @@ in
       "mounts"
       "wireguard"
       "samba"
+      "forgejo-runner"
     ];
     modules = [
       ./euler/_hardware.nix
