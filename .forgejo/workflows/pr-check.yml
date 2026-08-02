@@ -1,0 +1,90 @@
+name: pr-check
+
+# Deterministic PR reviewer.
+#
+# Runs the repo's own gates (formatting + flake evaluation) on every pull
+# request, then posts a *review* — not just a comment — through the Forgejo
+# API. With branch protection on `main` requiring one approval, a green run
+# unblocks the merge button and a red run blocks it.
+#
+# Runs on the `native:host` label so the host's nix daemon and store cache are
+# reused; a docker job would re-download the installer and evaluate cold every
+# time.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  # Superseded runs are pointless: only the tip of the PR branch matters.
+  group: pr-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: native
+    if: ${{ !github.event.pull_request.draft }}
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          # Need the merge base for the diff-scoped steps below.
+          fetch-depth: 0
+
+      - name: Formatting (nixfmt-tree)
+        id: fmt
+        run: |
+          # `nix fmt` here is treefmt (flake `formatter` = nixfmt-tree);
+          # --ci implies --fail-on-change and --no-cache.
+          nix fmt -- --ci
+
+      - name: Flake evaluation + checks
+        id: flake
+        run: |
+          # --no-build: validates that every flake output (including each
+          # nixosConfigurations.<host>.config.system.build.toplevel) evaluates,
+          # without realising the multi-GB closures on the runner.
+          nix flake check --no-build --show-trace
+
+      - name: Post review
+        if: ${{ always() }}
+        env:
+          # Bot PAT — see docs/forgejo-pr-review.md. Falls back to the built-in
+          # Actions token, which can comment but cannot cast an approval that
+          # satisfies branch protection.
+          TOKEN: ${{ secrets.FORGEJO_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+          FMT: ${{ steps.fmt.outcome }}
+          FLAKE: ${{ steps.flake.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          api="${GITHUB_SERVER_URL}/api/v1"
+
+          icon() { [ "$1" = "success" ] && echo "✅" || echo "❌"; }
+
+          body=$(printf '%s\n' \
+            "**Automated checks**" \
+            "" \
+            "| check | result |" \
+            "| --- | --- |" \
+            "| \`nix fmt -- --ci\` | $(icon "$FMT") $FMT |" \
+            "| \`nix flake check --no-build\` | $(icon "$FLAKE") $FLAKE |" \
+            "" \
+            "[run log]($RUN_URL)")
+
+          if [ "$FMT" = "success" ] && [ "$FLAKE" = "success" ]; then
+            event=APPROVE
+          else
+            event=REQUEST_CHANGES
+          fi
+
+          jq -n --arg body "$body" --arg event "$event" \
+            '{body: $body, event: $event}' \
+          | curl -sSf -X POST \
+              -H "Authorization: token ${TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data @- \
+              "${api}/repos/${GITHUB_REPOSITORY}/pulls/${{ github.event.pull_request.number }}/reviews" \
+            > /dev/null
+
+          echo "posted $event review"
