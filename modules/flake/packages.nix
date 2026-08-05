@@ -1,4 +1,4 @@
-{ inputs, config, ... }:
+{ inputs, ... }:
 {
   # nvim (a callPackage, not a wrapper) plus the raw nixpkgs pi package.
   # The wrapped tools (tmux, yazi, hunk, worktrunk, pi-desktop, pi-wsl, …) are
@@ -27,7 +27,6 @@
     {
       packages = {
         inherit (pkgs) nvim;
-        pi-upstream = inputs.llm-agents.packages.${system}.pi;
       };
 
       apps = {

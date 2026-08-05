@@ -93,7 +93,7 @@ let
       };
 
       config = {
-        package = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.pi;
+        package = pkgs.llm-agents.pi;
 
         # Self-contained: pi's built-in `bash` tool and several extensions
         # shell out to these. Appended to PATH, so a global install still
