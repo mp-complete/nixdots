@@ -1,0 +1,22 @@
+name: main-check
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-check
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check flake
+        run: nix flake check --show-trace
