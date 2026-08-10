@@ -27,6 +27,13 @@
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Pinned llm-agents.nix revision that packages pi 0.83.0, used by
+    # overlays/pi-pin.nix to hold pi back from the 429-prone 0.84.x releases.
+    # Remove together with that overlay.
+    llm-agents-pinned = {
+      url = "github:numtide/llm-agents.nix/9bd01c89b9175a394948e6ca7a40151931004833";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     niri = {
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";

@@ -3,6 +3,9 @@ let
   overlays = [
     inputs.llm-agents.overlays.shared-nixpkgs
 
+    # Temporary: hold pi at 0.83.0 (see overlays/pi-pin.nix).
+    (import ../../overlays/pi-pin.nix { inherit (inputs) llm-agents-pinned; })
+
     # Bun 1.3.13 standalone executables produced by `bun build --compile`
     # currently segfault on NixOS/WSL. Pi supports a Node-based build for this
     # case; keep it under the same pkgs.llm-agents.pi attribute.
