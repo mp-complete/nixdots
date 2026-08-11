@@ -24,6 +24,7 @@ let
   ];
   wslExtensions = desktopExtensions ++ [
     "pi-wsl-images" # Alt+V image paste from the Windows clipboard
+    "pi-windows-tools" # Windows shell execution, path conversion, and WSL bridge
     "agent-browser-edge-bridge" # route agent_browser through Windows Edge (CDP)
     "pi-agent-browser-native" # native browser automation via agent-browser
     "pi-web-access" # web search, URL/repo/PDF/video access
