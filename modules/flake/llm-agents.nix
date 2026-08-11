@@ -1,4 +1,4 @@
-{ inputs, lib, ... }:
+{ inputs, ... }:
 let
   overlays = [
     inputs.llm-agents.overlays.shared-nixpkgs
@@ -7,11 +7,48 @@ let
     (import ../../overlays/pi-pin.nix { inherit (inputs) llm-agents-pinned; })
 
     # Bun 1.3.13 standalone executables produced by `bun build --compile`
-    # currently segfault on NixOS/WSL. Pi supports a Node-based build for this
-    # case; keep it under the same pkgs.llm-agents.pi attribute.
-    (_final: prev: {
+    # currently segfault on NixOS/WSL. Pi supports a Node-based build; Hunk
+    # needs Bun, so bundle its JavaScript and run it with the working Bun
+    # runtime instead of embedding Bun in a standalone executable.
+    (final: prev: {
       llm-agents = prev.llm-agents // {
         pi = prev.llm-agents.pi.override { useBun = false; };
+
+        hunk =
+          if final.stdenv.hostPlatform.system == "x86_64-linux" then
+            prev.llm-agents.hunk.overrideAttrs (old: {
+              nativeBuildInputs = old.nativeBuildInputs ++ [ final.makeWrapper ];
+
+              buildPhase = ''
+                runHook preBuild
+                mkdir -p .bun-tmp .bun-install hunk-dist
+                BUN_TMPDIR=$PWD/.bun-tmp \
+                BUN_INSTALL=$PWD/.bun-install \
+                ${final.bun}/bin/bun build --target bun \
+                  --external '@opentui/core-*' \
+                  ./src/main.tsx --outdir hunk-dist
+                runHook postBuild
+              '';
+
+              installPhase = ''
+                runHook preInstall
+                mkdir -p $out/lib/hunk
+                cp -r hunk-dist/* $out/lib/hunk/
+
+                nativeCore=$(find node_modules -path '*/@opentui/core-linux-x64' -print -quit)
+                test -n "$nativeCore"
+                mkdir -p $out/lib/hunk/node_modules/@opentui
+                cp -rL "$nativeCore" $out/lib/hunk/node_modules/@opentui/core-linux-x64
+
+                makeWrapper ${final.bun}/bin/bun $out/bin/hunk \
+                  --add-flags $out/lib/hunk/main.js \
+                  --set HUNK_INSTALL_SOURCE nix
+                cp -r ./skills $out/
+                runHook postInstall
+              '';
+            })
+          else
+            prev.llm-agents.hunk;
       };
     })
   ];
@@ -25,10 +62,6 @@ in
       _module.args.pkgs = import inputs.nixpkgs {
         inherit system;
         inherit overlays;
-
-        # Only the Elastic-2.0 licensed context-mode pi extension needs this;
-        # keep the flake-side allowance narrower than allowUnfree = true.
-        config.allowUnfreePredicate = pkg: lib.getName pkg == "context-mode";
       };
     };
 

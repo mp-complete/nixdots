@@ -1,6 +1,24 @@
+{ config, lib, ... }:
+let
+  directoryCases = lib.concatStringsSep "\n" (
+    lib.flatten (
+      lib.mapAttrsToList (
+        shellName: shell:
+        map (
+          directory: "${lib.escapeShellArg directory}) shell=${lib.escapeShellArg shellName} ;;"
+        ) shell.directories
+      ) config.repo.shells
+    )
+  );
+in
 {
   flake.modules.homeManager.base =
-    { pkgs, ... }:
+    {
+      lib,
+      osConfig,
+      pkgs,
+      ...
+    }:
     {
       home.shellAliases.fzfp = "fzf --preview 'bat --color=always {}' --preview-window '~3'";
 
@@ -28,6 +46,39 @@
         enableBashIntegration = true;
         enableNushellIntegration = true;
         nix-direnv.enable = true;
+        stdlib = ''
+          # Load a repository shell from this machine's nixdots flake. With no
+          # argument, resolve the shell from repo.shells.*.directories and then
+          # fall back to the current directory basename.
+          # Usage from .envrc: use nixdots [shell]
+          use_nixdots() {
+            if [[ $# -gt 1 ]]; then
+              log_error "usage: use nixdots [shell]"
+              return 1
+            fi
+
+            local shell="''${1:-}"
+            if [[ -z "$shell" ]]; then
+              case "''${PWD##*/}" in
+                ${directoryCases}
+                *) shell="''${PWD##*/}" ;;
+              esac
+            fi
+
+            local flake_path=${lib.escapeShellArg osConfig.programs.nh.flake}
+            local development_path="$flake_path/modules/development"
+
+            # nix-direnv normally watches only flake.nix and flake.lock for an
+            # external flake. Include aspect definitions and their directories
+            # so edits and newly added aspects invalidate the cached shell.
+            while IFS= read -r path; do
+              watch_file "$path"
+            done < <(${pkgs.findutils}/bin/find "$development_path" \
+              \( -type d -o \( -type f -name '*.nix' \) \) -print)
+
+            use flake "path:$flake_path#$shell"
+          }
+        '';
       };
       programs.atuin = {
         enable = true;
