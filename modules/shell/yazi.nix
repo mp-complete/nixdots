@@ -41,6 +41,7 @@
           jump-to-char
           ;
         path-from-root = "${path-from-root}";
+        paste-image = ./_yazi/paste-image.yazi;
       };
 
       flavors = {
@@ -89,6 +90,14 @@
             ];
             run = "plugin path-from-root";
             desc = "Copy path relative to git root";
+          }
+          {
+            on = [
+              "c"
+              "i"
+            ];
+            run = "plugin paste-image";
+            desc = "Paste Windows clipboard image";
           }
         ];
       };
