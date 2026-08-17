@@ -1,0 +1,23 @@
+diff --git a/extensions/browser-execute.ts b/extensions/browser-execute.ts
+index 7349e5e..be9e5b3 100644
+--- a/extensions/browser-execute.ts
++++ b/extensions/browser-execute.ts
+@@ -4,0 +5 @@ import { executeBrowserCode, type BrowserExecuteParameters } from "../src/browse
++import { SessionStore } from "../src/session-store.js";
+@@ -36,0 +38,4 @@ export default function browserExecuteExtension(pi: ExtensionAPI) {
++  pi.on("session_shutdown", (_event, ctx) => {
++    SessionStore.evict(sessionIDOf(ctx as { sessionId?: string; sessionID?: string; cwd: string }));
++  });
++
+
+diff --git a/src/browser-execute.ts b/src/browser-execute.ts
+index 94140d5..9a1fd69 100644
+--- a/src/browser-execute.ts
++++ b/src/browser-execute.ts
+@@ -74 +74,5 @@ function timeoutSignal(ms: number): Promise<never> {
+-    setTimeout(() => reject(new Error("browser_execute timed out")), ms);
++    const timer = setTimeout(
++      () => reject(new Error("browser_execute timed out")),
++      ms,
++    );
++    timer.unref();

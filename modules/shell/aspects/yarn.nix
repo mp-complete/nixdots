@@ -1,15 +1,15 @@
 {
-  repo.aspects.yarn =
+  flake.modules.devShell.yarn =
     { pkgs, ... }:
     {
       packages = [ pkgs.yarn ];
+      env.NIXDOTS_YARN_ACTIVE = "1";
 
       fish.interactiveShellInit = ''
         # Fish's bundled Yarn 1 completion knows the `workspace` command but
         # does not complete workspace names, unlike Yarn's Bash completion.
         function __nixdots_yarn_aspect_active
-          set -q NIXDOTS_REPO_ASPECTS
-          and contains -- yarn (string split : -- "$NIXDOTS_REPO_ASPECTS")
+          set -q NIXDOTS_YARN_ACTIVE
         end
 
         function __nixdots_yarn_workspace_names

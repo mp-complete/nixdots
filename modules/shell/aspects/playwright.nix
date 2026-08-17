@@ -1,5 +1,5 @@
 {
-  repo.aspects.playwright =
+  flake.modules.devShell.playwright =
     { pkgs, ... }:
     {
       runtimeLibraries = with pkgs; [

@@ -10,14 +10,16 @@
 #   $out/package.json
 #   $out/src/index.ts
 #   $out/scripts/bootstrap.sh
-#   $out/scripts/cdp_forwarder.py
+#   $out/scripts/edge_bridge.ps1
+#   $out/scripts/cdp_forwarder.ps1
+#   $out/test/*.test.mjs
 #   $out/README.md
 #
 # The pi wrapper picks it up via `--extension $out`. Pi reads the `pi`
 # manifest in `package.json` to learn which TS file to load.
 let
   pname = "agent-browser-edge-bridge";
-  version = "0.1.0";
+  version = "0.3.0";
 
   # Filter the source so default.nix and editor cruft don't end up in
   # the store output. Keeps the derivation hash stable when only
@@ -29,6 +31,7 @@ let
       ./README.md
       ./src
       ./scripts
+      ./test
     ];
   };
 in
@@ -36,7 +39,7 @@ runCommand "pi-ext-${pname}-${version}"
   {
     inherit src;
     meta = {
-      description = "Pi extension: route agent_browser tool calls through a Windows-Edge CDP bridge from WSL.";
+      description = "Pi extension: route WSL pi-chrome-use browser_execute calls exclusively to a dedicated Windows Edge profile.";
       license = lib.licenses.mit;
       platforms = lib.platforms.linux;
     };

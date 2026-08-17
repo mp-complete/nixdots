@@ -1,107 +1,120 @@
 #!/usr/bin/env bash
-# Bootstrap: ensure a Windows-side Edge with CDP enabled is running, and that
-# its debug port is reachable from WSL via a Windows-side TCP forwarder.
-#
-# Idempotent — safe to invoke from every consumer call.
-#
-# Output contract: on success, the FINAL LINE on stdout is the CDP URL
-#   (e.g., "http://172.27.48.1:9223"). All other diagnostic output goes
-#   to stderr, prefixed with "[wsl-browser]". Consumers should do:
-#
-#     CDP_URL=$(bootstrap.sh | tail -n1)
-#
-# Environment overrides (all optional; sensible defaults):
-#   WSL_BROWSER_DEBUG_PORT     CDP port on Windows-localhost  (default 9222)
-#   WSL_BROWSER_FORWARD_PORT   Forwarded port WSL can reach   (default 9223)
-#   WSL_BROWSER_WIN_USER       Windows username               (auto-detect)
-#   WSL_BROWSER_USER_DATA_DIR  Edge profile dir               (auto-derived)
-#   WSL_BROWSER_EDGE_EXE       Path to msedge.exe             (auto-detect)
+# Ensure a dedicated visible Microsoft Edge work profile is running on Windows
+# and return a WSL-reachable CDP URL. Diagnostics go to stderr; the final stdout
+# line is the URL consumed by the Pi extension.
 set -euo pipefail
 
 DEBUG_PORT="${WSL_BROWSER_DEBUG_PORT:-9222}"
 FORWARD_PORT="${WSL_BROWSER_FORWARD_PORT:-9223}"
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONTROLLER_SRC="$SCRIPT_DIR/edge_bridge.ps1"
 FORWARDER_SRC="$SCRIPT_DIR/cdp_forwarder.ps1"
 
-log() { printf '[wsl-browser] %s\n' "$*" >&2; }
+log() { printf '[wsl-edge] %s\n' "$*" >&2; }
 die() { log "ERROR: $*"; exit 1; }
 
-# --- 0. Sanity-check that we're in WSL ----------------------------------
-if ! grep -qi microsoft /proc/version 2>/dev/null; then
-  die "This script only works inside WSL2 on Windows."
+[[ "$DEBUG_PORT" =~ ^[0-9]+$ ]] && (( DEBUG_PORT > 0 && DEBUG_PORT < 65536 )) \
+  || die "WSL_BROWSER_DEBUG_PORT must be a TCP port number."
+[[ "$FORWARD_PORT" =~ ^[0-9]+$ ]] && (( FORWARD_PORT > 0 && FORWARD_PORT < 65536 )) \
+  || die "WSL_BROWSER_FORWARD_PORT must be a TCP port number."
+[[ "$DEBUG_PORT" != "$FORWARD_PORT" ]] || die "Debug and forward ports must differ."
+
+grep -qi microsoft /proc/version 2>/dev/null \
+  || die "WSL detection failed; this bridge only runs inside WSL2."
+for command in powershell.exe cmd.exe wslpath curl jq sha256sum; do
+  command -v "$command" >/dev/null 2>&1 || die "$command is required but not on PATH."
+done
+
+edge_identity() {
+  local url="$1"
+  local payload
+  payload="$(curl -fsS --max-time 2 "$url/json/version" 2>/dev/null)" || return 1
+  jq -er '[
+    .Browser,
+    (.webSocketDebuggerUrl
+      | capture("^[^:]+://[^/]+(?<path>/devtools/browser/[^/?]+)(?:[?#].*)?$").path)
+  ] | select((.[0] | type == "string") and (.[0] | startswith("Edg/"))) | @tsv' \
+    <<<"$payload" 2>/dev/null
+}
+
+probe_expected_edge() {
+  local url="$1"
+  local actual
+  actual="$(edge_identity "$url")" || return 1
+  [[ "$actual" == "$EXPECTED_EDGE_IDENTITY" ]]
+}
+
+WIN_TEMP_RAW="$(cmd.exe /d /c 'echo %TEMP%' 2>/dev/null | tr -d '\r\n')"
+[[ -n "$WIN_TEMP_RAW" && "$WIN_TEMP_RAW" != '%TEMP%' ]] \
+  || die "Windows TEMP could not be resolved through cmd.exe."
+WIN_TEMP_WSL="$(wslpath -u "$WIN_TEMP_RAW" 2>/dev/null)" \
+  || die "Could not convert Windows TEMP to a WSL path: $WIN_TEMP_RAW"
+[[ -d "$WIN_TEMP_WSL" ]] || die "Windows TEMP is not mounted in WSL: $WIN_TEMP_WSL"
+
+CONTROLLER_HASH="$(sha256sum "$CONTROLLER_SRC" | cut -c1-16)"
+FORWARDER_HASH="$(sha256sum "$FORWARDER_SRC" | cut -c1-16)"
+CONTROLLER_WSL="$WIN_TEMP_WSL/pi_agent_browser_edge_bridge-$CONTROLLER_HASH.ps1"
+FORWARDER_WSL="$WIN_TEMP_WSL/pi_agent_browser_edge_forwarder-$FORWARDER_HASH.ps1"
+cp "$CONTROLLER_SRC" "$CONTROLLER_WSL"
+cp "$FORWARDER_SRC" "$FORWARDER_WSL"
+CONTROLLER_WIN="$(wslpath -w "$CONTROLLER_WSL")"
+FORWARDER_WIN="$(wslpath -w "$FORWARDER_WSL")"
+
+common_args=(-DebugPort "$DEBUG_PORT")
+if [[ -n "${WSL_BROWSER_EDGE_EXE:-}" ]]; then
+  common_args+=(-EdgeExe "$WSL_BROWSER_EDGE_EXE")
 fi
-command -v powershell.exe >/dev/null 2>&1 || die "powershell.exe not on PATH (interop disabled?)"
-command -v cmd.exe        >/dev/null 2>&1 || die "cmd.exe not on PATH (interop disabled?)"
-command -v wslpath        >/dev/null 2>&1 || die "wslpath missing — non-WSL distro?"
-
-# --- 1. Resolve Windows-side paths --------------------------------------
-WIN_USER="${WSL_BROWSER_WIN_USER:-$(cmd.exe /c 'echo %USERNAME%' 2>/dev/null | tr -d '\r\n')}"
-[[ -n "$WIN_USER" ]] || die "Could not determine Windows username."
-
-USER_DATA_DIR="${WSL_BROWSER_USER_DATA_DIR:-C:\\Users\\${WIN_USER}\\AppData\\Local\\Microsoft\\Edge\\User Data - CDP}"
-
-# Edge — try the two common install locations unless overridden
-if [[ -z "${WSL_BROWSER_EDGE_EXE:-}" ]]; then
-  for candidate in \
-    "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe" \
-    "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"; do
-    wsl_path=$(wslpath -u "$candidate" 2>/dev/null) || continue
-    if [[ -x "$wsl_path" ]]; then EDGE_EXE="$candidate"; break; fi
-  done
-  : "${EDGE_EXE:?Could not locate msedge.exe — set WSL_BROWSER_EDGE_EXE}"
-else
-  EDGE_EXE="$WSL_BROWSER_EDGE_EXE"
+if [[ -n "${WSL_BROWSER_USER_DATA_DIR:-}" ]]; then
+  common_args+=(-UserDataDir "$WSL_BROWSER_USER_DATA_DIR")
 fi
 
-WINDOWS_HOST=$(ip route show default | awk '/default/ {print $3; exit}')
-[[ -n "$WINDOWS_HOST" ]] || die "Could not determine Windows host IP from default route."
+log "Checking Edge policy, executable, dedicated profile, and debug-port ownership."
+edge_result="$(
+  powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+    -File "$CONTROLLER_WIN" -Action EnsureEdge "${common_args[@]}" \
+    | tr -d '\r'
+)" || die "Windows Edge setup failed (see the PowerShell layer above)."
+edge_json="$(tail -n1 <<<"$edge_result")"
+EXPECTED_EDGE_IDENTITY="$(jq -er '[.browser, .webSocketPath] | @tsv' <<<"$edge_json" 2>/dev/null)" \
+  || die "Windows Edge setup returned invalid CDP identity JSON: $edge_json"
+log "Windows Edge ready: $edge_json"
 
-log "Windows host=$WINDOWS_HOST user=$WIN_USER edge=$EDGE_EXE"
-
-# --- 2. Resolve forwarder paths -----------------------------------------
-WIN_TEMP_RAW=$(cmd.exe /c 'echo %TEMP%' 2>/dev/null | tr -d '\r\n')
-WIN_TMP_WSL=$(wslpath -u "$WIN_TEMP_RAW")
-FORWARDER_WIN_PATH="$WIN_TEMP_RAW\\wsl_browser_cdp_forwarder.ps1"
-
-# --- 3. Launch Edge (no-op if our profile is already running) ----------
-log "Ensuring Edge is running (CDP on 127.0.0.1:$DEBUG_PORT)..."
-powershell.exe -NoProfile -Command \
-  "Start-Process -FilePath '$EDGE_EXE' -ArgumentList '--remote-debugging-port=$DEBUG_PORT','--user-data-dir=$USER_DATA_DIR','--no-first-run','--no-default-browser-check','about:blank'" \
-  >/dev/null 2>&1 || true
-
-log "Waiting for Edge CDP port on Windows..."
-for _ in $(seq 1 30); do
-  count=$(powershell.exe -NoProfile -Command \
-    "(Get-NetTCPConnection -LocalPort $DEBUG_PORT -State Listen -ErrorAction SilentlyContinue | Measure-Object).Count" \
-    2>/dev/null | tr -d '\r\n ')
-  if [[ "$count" =~ ^[1-9] ]]; then break; fi
+# Mirrored networking makes Windows localhost reachable directly from WSL.
+# Prefer it because it needs no cross-interface listener.
+DIRECT_URL="http://127.0.0.1:$DEBUG_PORT"
+for _ in $(seq 1 5); do
+  if probe_expected_edge "$DIRECT_URL"; then
+    log "Microsoft Edge CDP is reachable through mirrored localhost; no forwarder needed."
+    printf '%s\n' "$DIRECT_URL"
+    exit 0
+  fi
   sleep 1
 done
-[[ "$count" =~ ^[1-9] ]] || die "Edge CDP port $DEBUG_PORT never came up on Windows."
 
-# --- 4. Ensure TCP forwarder is running ---------------------------------
-log "Ensuring TCP forwarder (0.0.0.0:$FORWARD_PORT -> 127.0.0.1:$DEBUG_PORT)..."
-existing=$(powershell.exe -NoProfile -Command \
-  "(Get-NetTCPConnection -LocalPort $FORWARD_PORT -State Listen -ErrorAction SilentlyContinue | Measure-Object).Count" \
-  2>/dev/null | tr -d '\r\n ')
-if [[ ! "$existing" =~ ^[1-9] ]]; then
-  # Only (re)deploy the script when we actually need to start a new
-  # forwarder — otherwise the running powershell.exe holds the file
-  # open on Windows and cp would fail.
-  cp "$FORWARDER_SRC" "$WIN_TMP_WSL/wsl_browser_cdp_forwarder.ps1"
-  powershell.exe -NoProfile -Command \
-    "Start-Process -FilePath 'powershell.exe' -ArgumentList '-NoProfile','-WindowStyle','Hidden','-File','$FORWARDER_WIN_PATH','-ListenPort','$FORWARD_PORT','-TargetPort','$DEBUG_PORT' -WindowStyle Hidden" \
-    >/dev/null 2>&1
-fi
+# NAT fallback: bind the relay only to the Windows gateway interface used by
+# this WSL VM. The PowerShell controller refuses wildcard or unrelated owners.
+WINDOWS_HOST="$(ip route show default | awk '/default/ {print $3; exit}')"
+[[ "$WINDOWS_HOST" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+  || die "Could not determine a Windows IPv4 gateway for WSL NAT fallback."
 
-# --- 5. Verify reachability and emit the CDP URL on stdout --------------
+log "Mirrored localhost is unavailable; checking narrow NAT forwarder on $WINDOWS_HOST:$FORWARD_PORT."
+forward_result="$(
+  powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+    -File "$CONTROLLER_WIN" -Action EnsureForwarder \
+    -ForwardPort "$FORWARD_PORT" -ListenAddress "$WINDOWS_HOST" \
+    -ForwarderPath "$FORWARDER_WIN" "${common_args[@]}" \
+    | tr -d '\r'
+)" || die "Windows NAT forwarder setup failed (see the ownership/policy layer above)."
+log "NAT forwarder ready: $(tail -n1 <<<"$forward_result")"
+
+FORWARDED_URL="http://$WINDOWS_HOST:$FORWARD_PORT"
 for _ in $(seq 1 15); do
-  if curl -s --max-time 1 "http://$WINDOWS_HOST:$FORWARD_PORT/json/version" >/dev/null 2>&1; then break; fi
+  if probe_expected_edge "$FORWARDED_URL"; then
+    log "Microsoft Edge CDP is reachable from WSL through the narrow NAT forwarder."
+    printf '%s\n' "$FORWARDED_URL"
+    exit 0
+  fi
   sleep 1
 done
-curl -s --max-time 2 "http://$WINDOWS_HOST:$FORWARD_PORT/json/version" >/dev/null \
-  || die "CDP endpoint not reachable from WSL at http://$WINDOWS_HOST:$FORWARD_PORT"
 
-log "CDP endpoint ready."
-printf 'http://%s:%s\n' "$WINDOWS_HOST" "$FORWARD_PORT"
+die "WSL reachability failed: $FORWARDED_URL/json/version did not match the verified Windows Edge browser identity."

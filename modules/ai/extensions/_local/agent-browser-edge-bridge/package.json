@@ -1,24 +1,29 @@
 {
   "name": "agent-browser-edge-bridge",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Pi extension that transparently routes agent_browser tool calls through a Windows-Edge CDP bridge from WSL.",
+  "description": "Pi extension that routes pi-chrome-use exclusively to a dedicated Windows Edge CDP profile from WSL.",
   "license": "MIT",
   "keywords": [
     "pi-package",
     "pi-extension",
-    "agent-browser",
+    "pi-chrome-use",
     "wsl",
     "edge",
     "cdp"
   ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
   "pi": {
     "extensions": [
       "./src/index.ts"
     ]
   },
   "peerDependencies": {
-    "@earendil-works/pi-coding-agent": "*"
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "typebox": "*"
   }
 }

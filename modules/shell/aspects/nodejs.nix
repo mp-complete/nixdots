@@ -1,5 +1,5 @@
 {
-  repo.aspects.nodejs =
+  flake.modules.devShell.nodejs =
     { pkgs, ... }:
     {
       packages = [ pkgs.nodejs ];

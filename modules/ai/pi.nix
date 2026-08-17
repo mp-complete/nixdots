@@ -18,15 +18,14 @@ let
     "edb-agent-steer" # steer / queue / discard / edit mid-turn messages
     "pi-interview" # interview-mode extension
     "pi-subagents" # async subagent delegation and coordination
-    "pi-hermes-memory" # persistent memory, session search, and secret scanning
     "pi-copilot-discovery" # dynamic GitHub Copilot model discovery
     "pi-nested-agent-md" # inject nested AGENTS.md instructions on file reads
   ];
   wslExtensions = desktopExtensions ++ [
     "pi-wsl-images" # Alt+V image paste from the Windows clipboard
     "pi-windows-tools" # Windows shell execution, path conversion, and WSL bridge
-    "agent-browser-edge-bridge" # route agent_browser through Windows Edge (CDP)
-    "pi-agent-browser-native" # native browser automation via agent-browser
+    "pi-chrome-use" # CDP-only browser execution against Windows Edge
+    "agent-browser-edge-bridge" # verify and route browser_execute to dedicated Edge
     "pi-web-access" # web search, URL/repo/PDF/video access
   ];
 
@@ -108,7 +107,6 @@ let
           bat # nicer file viewer for `bash` tool output
           tree # quick directory inspection
           delta # diff viewer (useful from the bash tool)
-          agent-browser # headless browser automation CLI for agents
         ];
 
         # Build the selected registry specs with the wrap-time pkgs. Routed

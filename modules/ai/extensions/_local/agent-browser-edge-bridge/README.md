@@ -1,86 +1,111 @@
 # agent-browser-edge-bridge
 
-Pi extension. On WSL, transparently routes the `agent_browser` tool through
-Microsoft Edge running on the Windows host (via Chrome DevTools Protocol)
-instead of trying to launch a Linux Chromium that doesn't exist in WSL.
+Pi extension for the WSL wrapper. It makes `pi-chrome-use` Edge-only: before
+any `browser_execute` call runs, the bridge starts or verifies a dedicated
+Microsoft Edge profile on Windows and installs its WSL-reachable browser
+WebSocket endpoint as `BU_CDP_WS`.
 
-Layers on top of `pi-agent-browser-native` (which registers the
-`agent_browser` tool). Loading order is enforced by listing this extension
-*after* `pi-agent-browser-native` in the pi extension list.
+Authentication remains in Windows Edge. The bridge never exports cookies,
+tokens, or profile data into WSL, and the CDP WebSocket URL is kept in the Pi
+process environment rather than added to the model-visible tool input.
 
-## Behavior
+## Usage
 
-- Hooks `tool_call` for `agent_browser`. On the **first** call in a pi
-  process:
-  1. Resolves a working CDP URL for the Windows-side Edge bridge:
-     - **Fast path:** if a previous pi session left a CDP URL in
-       `$XDG_RUNTIME_DIR/pi-agent-browser-cdp-url`, the extension
-       probes it with a short `fetch` to `/json/version`. If it answers,
-       the URL is reused and the bootstrap shellout is skipped
-       entirely (Edge + forwarder are still up from before).
-     - **Slow path:** runs the bundled `scripts/bootstrap.sh`
-       (idempotent). It launches Edge on Windows with
-       `--remote-debugging-port=9222` and a dedicated `User Data - CDP`
-       profile, plus a PowerShell TCP forwarder
-       (`scripts/cdp_forwarder.ps1`, `Add-Type` + .NET async, no Python)
-       exposing CDP at `http://<win-host>:9223`.
-  2. Mutates `event.input.args` to prepend `--cdp <bridge-url>` and
-     forces `event.input.sessionMode = "fresh"`. `pi-agent-browser-native`
-     treats `--cdp` as a launch-scoped flag and `fresh` makes it apply --
-     the resulting managed session attaches to the bridge instead of
-     launching a local Chrome.
-  3. Persists the resolved URL back to the runtime-dir cache so the
-     next pi session can use the fast path.
-- On every **subsequent** call in the same pi process: leaves args/mode
-  alone. `pi-agent-browser-native`'s managed-session model reuses the
-  CDP-attached upstream session for the rest of the pi process's life.
-- On bootstrap failure: the tool call is **blocked** with a structured
-  "what to try next" reason surfaced to the LLM (probe commands,
-  Windows-side checks, `/ab-edge-reset` hint), the "needs injection"
-  flag is rolled back so the next call retries, and the extension
-  enters a 30 s **failure-backoff window** during which further
-  `agent_browser` calls fail fast with a cooldown message instead of
-  re-running bootstrap. `/ab-edge-reset` clears the cooldown.
+There is no public/work backend selector. Public web research stays with
+`pi-web-access`; interactive browser automation always targets the dedicated
+Windows Edge profile.
 
-## Per-session isolation
+A first `browser_execute` snippet connects through the bridge-provided endpoint:
 
-`pi-agent-browser-native` already names its daemon socket per
-implicit-session (see `createImplicitSessionName` in its `runtime.js`);
-each pi process gets its own `.sock` inside `/tmp/piab-<uid>/`. No
-additional isolation work happens in this extension.
+```js
+await session.connect();
+const { targetInfos } = await session.Target.getTargets({});
+return targetInfos.filter((target) => target.type === "page");
+```
 
-## One-time Windows sign-in
+Later `browser_execute` calls in the same Pi session reuse `pi-chrome-use`'s
+persistent CDP session. If Edge is closed or restarted, the bridge revalidates
+and re-establishes the endpoint before the next browser call; the snippet may
+need to call `session.connect()` again after a disconnected WebSocket.
 
-The first time you visit an AAD-protected site, the dedicated Edge
-profile (`User Data - CDP`) will hit the Microsoft sign-in wall. Sign
-in once in the visible Edge window on Windows; cookies persist in that
-profile across reboots and all future pi sessions.
+Every browser call verifies the reachable endpoint against the exact Edge
+browser identity established on Windows. Ambient `BU_CDP_WS` and `BU_CDP_URL`
+values are cleared when the extension loads, so this wrapper cannot silently
+fall back to an unrelated browser endpoint.
 
-## Files
+## Windows Edge bootstrap
 
-- `src/index.ts` --- the pi extension.
-- `scripts/bootstrap.sh` --- launches Edge + the PowerShell forwarder.
-  Idempotent. Prints the CDP URL on the last line of stdout.
-- `scripts/cdp_forwarder.ps1` --- Windows-side TCP relay. Compiles a tiny
-  C# class via `Add-Type` for async I/O on the .NET thread pool. No
-  external runtime; works with stock `powershell.exe` (5.1+).
+On the first browser call, `scripts/bootstrap.sh`:
 
-## Slash commands
+1. Checks WSL interop and the effective registry value for Edge
+   `RemoteDebuggingAllowed`. Explicit `0` is a policy failure; absent means
+   remote debugging is allowed by Edge policy.
+2. Resolves Edge from Windows App Paths, Program Files, or PATH.
+3. Starts a visible Edge instance with a non-default persistent profile at:
 
-- `/ab-edge-status` --- shows whether the bridge has been bootstrapped
-  (and whether the next `agent_browser` call will inject `--cdp +
-  fresh`), is currently bootstrapping, is inside a failure-cooldown
-  window (with remaining seconds), or just has a cached URL from a
-  previous session waiting to be probed.
-- `/ab-edge-reset` --- clears the in-memory bridge state, the cross-
-  session cached CDP URL, and any active cooldown, so the next
-  `agent_browser` call re-bootstraps and re-attaches via CDP.
+   ```text
+   %LOCALAPPDATA%\Microsoft\Edge\User Data - CDP
+   ```
 
-## Why not pre-`agent-browser connect`?
+4. Verifies port 9222 is owned by that Edge executable, is bound only to
+   Windows loopback, and has exactly one matching remote-debugging-port and
+   dedicated-profile argument.
+5. Probes `127.0.0.1:9222` from WSL first. This is the preferred mirrored-
+   networking path and needs no relay.
+6. Under WSL NAT only, starts `cdp_forwarder.ps1` bound to the specific Windows
+   gateway address (never `0.0.0.0`) and forwards to Windows localhost:9222.
+7. Requires every WSL-reachable `/json/version` response to match the exact
+   browser product and browser WebSocket identity verified on Windows localhost.
 
-Earlier drafts ran `agent-browser connect <url>` from the `tool_call`
-hook, but `pi-agent-browser-native`'s `runAgentBrowserProcess` always
-overrides `AGENT_BROWSER_SOCKET_DIR` to its own per-uid value regardless
-of the caller's `process.env`. The pre-connect went to a different daemon
-than the tool's spawns. Injecting `--cdp` into the tool's own args
-sidesteps the daemon question entirely.
+The TypeScript bridge keeps the verified `/devtools/browser/<id>` path but
+rewrites the host to the exact HTTP endpoint that WSL proved reachable. This is
+necessary because Edge may report a Windows-loopback WebSocket URL that is not
+reachable from a NAT-mode WSL guest.
+
+An existing port listener is never killed or silently reused. Edge and
+forwarder listeners must have the expected executable, command line, profile,
+ports, and bind address; otherwise bootstrap reports a layer-specific collision.
+Every Pi runtime re-runs these ownership checks instead of trusting a cached URL.
+
+### Optional environment overrides
+
+- `WSL_BROWSER_DEBUG_PORT` (default `9222`)
+- `WSL_BROWSER_FORWARD_PORT` (default `9223`)
+- `WSL_BROWSER_USER_DATA_DIR` (Windows path)
+- `WSL_BROWSER_EDGE_EXE` (Windows path to `msedge.exe`)
+
+`BU_CDP_WS` and `BU_CDP_URL` are bridge-owned in this wrapper and are not caller
+overrides.
+
+## Commands
+
+- `/ab-edge-status` shows the Edge-only backend, verified browser identity,
+  reachable HTTP endpoint, environment state, and any bootstrap cooldown.
+- `/ab-edge-reset` forgets in-memory bridge state and clears the bridge-owned
+  CDP environment. It does **not** stop Edge, PowerShell, or any listener. The
+  next `browser_execute` call performs a complete revalidation.
+
+## Policy and security notes
+
+- The dedicated profile keeps automation separate from the user's primary Edge
+  profile while retaining Windows authentication and device-compliance flows.
+- CDP grants complete control of that profile. The NAT relay remains limited to
+  the Windows gateway interface visible to WSL; do not expose its ports through
+  firewall, portproxy, LAN, VPN, or container forwarding rules.
+- `pi-chrome-use` intentionally executes model-authored JavaScript and permits
+  dynamic Node imports. This is not a sandbox; use the same trust boundary as
+  Pi's normal coding tools.
+- This slice does not implement cross-worker leases. Do not give concurrent
+  autonomous workers unmanaged control of the same Edge profile.
+
+## Validation
+
+```bash
+npm test
+```
+
+The Nix extension derivation and `pi-wsl` wrapper are the authoritative
+packaging checks. Live validation should confirm a visible dedicated Edge
+window, an `Edg/*` `/json/version` response, an accepted WebSocket connection,
+existing login continuity, manual MFA/Hello interaction, and no credential
+export into WSL.
