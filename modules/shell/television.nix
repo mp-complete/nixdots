@@ -656,6 +656,28 @@ in
           })
         ];
 
+        # Abbreviations only where `tv` actually costs keystrokes. Deliberately
+        # *not* one per channel: `shell_integration.channel_triggers` above
+        # already picks the channel from the command being typed (ctrl-t), and
+        # sesh/tmux-windows have alt-b/alt-m, so `tvs`-style abbrs would be
+        # dead weight. What is left over is ad-hoc mode and the two channels
+        # with neither a trigger nor a key.
+        programs.fish.shellAbbrs = {
+          # Ad-hoc mode: no channel, just a command to fuzz over. The flags are
+          # long and easy to misremember (`-p` is --preview-command, not
+          # --preview), and `--set-cursor` drops the cursor inside the empty
+          # quotes so the source command can be typed straight away.
+          tvad = {
+            setCursor = true;
+            expansion = ''tv --source-command "%" --preview-command "bat -n --color=always {}"'';
+          };
+          # ripgrep over the current tree. Has a tmux popup (`prefix /`) but no
+          # trigger, and at a prompt it is often wanted in a subdirectory.
+          tvt = "tv text";
+          # Channel discovery, the companion to the `abbrs` channel above.
+          tvl = "tv list-channels";
+        };
+
         programs.fish.interactiveShellInit = lib.mkAfter ''
           # television's fish integration, sourced by hand rather than via an
           # `enable*Integration` flag because the upstream snippet
@@ -726,6 +748,10 @@ in
   # `wt`, which is only installed there (development/worktrunk.nix). It mirrors
   # the tmux `prefix C-w` popup, minus the gum/jq pipeline.
   flake.modules.homeManager.dev = {
+    # `tv worktrunk` has neither a trigger nor a fish key (the tmux popup is
+    # `prefix C-w`), and lives in this bucket because the channel does.
+    programs.fish.shellAbbrs.tvw = "tv worktrunk";
+
     television.extraChannels.worktrunk = {
       metadata = {
         name = "worktrunk";
