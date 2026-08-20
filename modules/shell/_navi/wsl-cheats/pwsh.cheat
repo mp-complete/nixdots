@@ -1,5 +1,0 @@
-% pwsh
-
-# Use powershell to authorize using the .npmrc file in the current directory
-; authorizes the current npm file
-pwsh.exe -wd $(powershell.exe -NoProfile -Command 'Write-Output $Env:USERPROFILE' | tr -d '\r') -c npx vsts-npm-auth -c $(wslpath -w $(pwd)/.npmrc) -t $(wslpath -w "$HOME/.npmrc") -f

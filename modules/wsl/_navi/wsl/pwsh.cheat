@@ -1,0 +1,7 @@
+% pwsh, wsl, npm, auth
+
+# Authorize npm against the Azure DevOps feed in ./.npmrc (via vsts-npm-auth on Windows)
+; Runs in the *Windows* home dir so vsts-npm-auth writes its token where
+; Windows tooling expects it; -t then copies the result back onto the WSL-side
+; ~/.npmrc. `tr -d '\r'` strips the CRLF that powershell.exe emits.
+pwsh.exe -wd $(powershell.exe -NoProfile -Command 'Write-Output $Env:USERPROFILE' | tr -d '\r') -c npx vsts-npm-auth -c $(wslpath -w $(pwd)/.npmrc) -t $(wslpath -w "$HOME/.npmrc") -f
