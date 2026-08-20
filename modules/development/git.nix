@@ -94,9 +94,22 @@
       # LAZYGIT_NEW_DIR_FILE, i.e. it follows lazygit's `cd` on exit. History
       # says bare `lazygit` still gets typed 44 times over `lg`, throwing that
       # away; rewrite it at command position (so `command lazygit` still works).
-      programs.fish.shellAbbrs.lazygit = {
-        position = "command";
-        expansion = "lg";
+      programs.fish.shellAbbrs = {
+        lazygit = {
+          position = "command";
+          expansion = "lg";
+        };
+
+        # The three git invocations that are typed verbatim, with no arguments
+        # to vary. From atuin: `git pull` 57, `git fetch --all` 26,
+        # `git fetch origin` 6 (plus a handful with a branch appended, which
+        # still works -- the abbr expands on the space before the branch name).
+        # Deliberately no `gst`/`gpu`: `git s` already exists as a git alias
+        # (above) and `git push` is only 12 uses, both below the bar the other
+        # abbrs in this config cleared.
+        gp = "git pull";
+        gfa = "git fetch --all";
+        gfo = "git fetch origin";
       };
       home.packages = [
         pkgs.delta

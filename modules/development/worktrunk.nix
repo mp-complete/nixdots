@@ -33,7 +33,7 @@
     };
 
   # Its interactive-shell integration (the bash-init hook + the wt-sesh/wtc
-  # aliases) must run in the user's shell, so it stays in the shell layer
+  # abbreviations) must run in the user's shell, so it stays in the shell layer
   # alongside fzf/zoxide/atuin/direnv. References the wrapped pkgs.worktrunk.
   flake.modules.homeManager.dev =
     { pkgs, ... }:
@@ -44,9 +44,23 @@
       programs.fish.shellInit = ''
         ${config.flake.wrappers.worktrunk.wrap { inherit pkgs; }}/bin/wt config shell init fish | source
       '';
-      home.shellAliases = {
+
+      # fish abbreviations rather than `home.shellAliases`. The latter already
+      # became abbrs in fish (`preferAbbrs`, shell/fish.nix) and these were
+      # never useful in bash -- bash is the login shell but immediately execs
+      # into fish (shell/fish.nix), so the bash aliases were dead weight.
+      # Declaring them here also makes the fish-only semantics explicit: the
+      # expansion lands in the buffer, so the `$(git branch | fzf ...)` in
+      # wt-sesh is visible and editable before it runs.
+      #
+      # Counts from atuin: `wt switch <branch>` 82, `wt list` 26 -- the two
+      # bare `wt` subcommands that survive alongside the fuzzy paths
+      # (`tvw` / tmux `prefix C-w`), which handle picking rather than typing.
+      programs.fish.shellAbbrs = {
         wt-sesh = "wt switch --no-cd -x 'sesh connect {{ worktree_path }}' $(git branch | fzf | cut -c 3-)";
         wtc = "wt switch --no-cd -x 'sesh connect {{ worktree_path }}' -c";
+        wtl = "wt list";
+        wts = "wt switch";
       };
     };
 }

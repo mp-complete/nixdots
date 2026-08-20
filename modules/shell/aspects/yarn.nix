@@ -38,6 +38,48 @@
 
           set --global __nixdots_yarn_completion_registered 1
         end
+
+        # Abbreviations for the yarn invocations typed verbatim, everywhere
+        # yarn is used. From atuin: `yarn start` 130, `yarn install` 92,
+        # `yarn build` 41, `yarn workspace ...` 80 (which the completion above
+        # then finishes), `yarn install && yarn build` 16.
+        #
+        # `abbr` is per *session*, not per directory, and nothing erases these
+        # when direnv unloads the shell -- so a plain `abbr -a ys 'yarn start'`
+        # would keep expanding in unrelated directories for the rest of the
+        # session. `--function` avoids that: fish leaves the token untouched
+        # when the function exits non-zero, so the guard below re-checks
+        # NIXDOTS_YARN_ACTIVE at *expansion* time rather than at registration.
+        function __nixdots_yarn_abbr_expand
+          __nixdots_yarn_aspect_active
+          or return 1
+
+          switch $argv[1]
+            case ys
+              echo 'yarn start'
+            case yi
+              echo 'yarn install'
+            case yb
+              echo 'yarn build'
+            case yw
+              echo 'yarn workspace'
+            case yib
+              echo 'yarn install && yarn build'
+            case '*'
+              return 1
+          end
+        end
+
+        if not set -q __nixdots_yarn_abbrs_registered
+          for __nixdots_yarn_abbr in ys yi yb yw yib
+            abbr --add $__nixdots_yarn_abbr \
+              --position command \
+              --function __nixdots_yarn_abbr_expand
+          end
+          set --erase __nixdots_yarn_abbr
+
+          set --global __nixdots_yarn_abbrs_registered 1
+        end
       '';
     };
 }

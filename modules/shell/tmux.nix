@@ -111,6 +111,25 @@ in
         # Lazygit in a floating popup, opened in the focused pane's CWD
         bind g display-popup -E -d "#{pane_current_path}" -w 90% -h 90% ${pkgs.lazygit}/bin/lazygit
 
+        # Alt-backtick (no prefix): "quake" popup -- a throwaway shell in the
+        # focused pane's CWD, for the one-off commands that would otherwise
+        # cost a whole new window. `-E` closes the popup as soon as the shell
+        # exits, so C-d/`exit` dismisses it and nothing survives. No command is
+        # given, so tmux runs `default-shell` (fish, via the login shell).
+        # `-T` puts the directory in the popup's border so it's obvious where
+        # the shell landed; `#{b:...}` keeps it to the basename.
+        bind -N "quake-style shell popup (cwd)" -n 'M-`' display-popup -E \
+          -d "#{pane_current_path}" \
+          -T " #{b:pane_current_path} " \
+          -w 80% -h 80%
+
+        # Alt-p (no prefix): pi in a new window, in the focused pane's CWD.
+        # `pi` is resolved from PATH rather than pinned to a store path
+        # because which wrapper is installed differs per host (pi-desktop vs
+        # pi-wsl, see modules/ai/pi.nix), so the tmux wrapper must not depend
+        # on either. automatic-rename-format labels the window `pi`.
+        bind -N "open pi in a new window (cwd)" -n M-p new-window -c "#{pane_current_path}" pi
+
         # --- television (tv) pickers ------------------------------------
         #
         # `display-popup -E` closes the popup as soon as the command exits.
