@@ -9,7 +9,7 @@
   # both tmux (the wrapper) and zoxide (shell/tools.nix) are already enabled in
   # this bucket, so no extra dependencies are needed.
   flake.modules.homeManager.base =
-    { pkgs, ... }:
+    { osConfig, pkgs, ... }:
     {
       home.packages = [ pkgs.sesh ];
 
@@ -24,10 +24,15 @@
         };
 
         # Named sessions always available in the picker (`sesh list -c`).
+        # The flake checkout lives at a different path per host
+        # (`~/.config/nixdots` on hilbert/general2, `~/.config/nixos` on the
+        # `nixos` host), so take it from `programs.nh.flake` instead of
+        # hardcoding one: sesh expands `~` but not `$NH_FLAKE`, and a session
+        # whose `path` does not exist silently starts in `$HOME` instead.
         session = [
           {
             name = "nixos config";
-            path = "~/.config/nixos";
+            path = osConfig.programs.nh.flake;
             preview_command = "eza --all --git --icons --color=always {}";
           }
         ];
