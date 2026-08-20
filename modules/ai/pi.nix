@@ -21,6 +21,7 @@ let
     "pi-copilot-discovery" # dynamic GitHub Copilot model discovery
     "pi-nested-agent-md" # inject nested AGENTS.md instructions on file reads
     "pi-scan-guard" # block unbounded filesystem scans (find /, rg /nix/store)
+    "pi-file-tools" # enable pi's built-in find/grep/ls tools
   ];
   wslExtensions = desktopExtensions ++ [
     "pi-wsl-images" # Alt+V image paste from the Windows clipboard
@@ -42,6 +43,7 @@ let
     "pi-copilot-discovery" # dynamic model discovery
     "pi-nested-agent-md" # nested AGENTS.md on file reads
     "pi-scan-guard" # hard-block unbounded scans (no UI to approve them)
+    "pi-file-tools" # enable pi's built-in find/grep/ls tools
     "notify" # push job outcomes to Gotify/ntfy
   ];
 

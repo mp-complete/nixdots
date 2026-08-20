@@ -1,0 +1,21 @@
+{
+  "name": "pi-file-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pi extension that enables pi's built-in find/grep/ls tools so the model stops being told to shell out to find.",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "tools"
+  ],
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
