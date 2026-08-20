@@ -163,6 +163,15 @@ in
         # shell/television.nix -- the upstream one does nothing on Enter.
         bind w display-popup -E -w 80% -h 80% "tv tmux-windows"
 
+        # Every pi session, live ones first (ctrl-s cycles to this project's
+        # and to all recent sessions). Enter is rebound here because the
+        # channel prints the session id by default so that `pi --session (tv
+        # pi-sessions)` composes -- in a popup that would close having done
+        # nothing. Pairs with alt-p above: alt-p starts a pi, prefix-P finds
+        # the one already running. Capital P because plain `prefix p` is
+        # tmux's own previous-window. See modules/ai/pi-sessions.nix.
+        bind -N "pi sessions" P display-popup -E -w 80% -h 80% "tv pi-sessions --keybindings='enter=\"actions:switch\"'"
+
         # Files under the focused pane's CWD, opened in $EDITOR. Enter is
         # bound here rather than in the channel because `files` is also tv's
         # ctrl-t fallback channel in fish (shell/television.nix), where

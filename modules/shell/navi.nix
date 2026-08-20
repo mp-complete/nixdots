@@ -30,7 +30,17 @@
         }
       ];
 
-      repoPaths = map (r: "${pkgs.fetchFromGitHub { inherit (r) owner repo rev sha256; }}") repos;
+      repoPaths = map (
+        r:
+        "${pkgs.fetchFromGitHub {
+          inherit (r)
+            owner
+            repo
+            rev
+            sha256
+            ;
+        }}"
+      ) repos;
 
       # Catppuccin Macchiato, same palette as shell/television.nix and
       # shell/fish.nix. Spelled out in hex (unlike `style` below) because fzf
@@ -65,7 +75,7 @@
       options.navi.cheatDirs = lib.mkOption {
         type = lib.types.attrsOf lib.types.path;
         default = { };
-        example = lib.literalExpression ''{ wsl = ./_navi/wsl; }'';
+        example = lib.literalExpression "{ wsl = ./_navi/wsl; }";
         description = ''
           Directories of locally authored `.cheat` files, keyed by the name
           they get under `~/.cheats/`. Each one is staged with `home.file` and

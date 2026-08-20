@@ -47,6 +47,11 @@
         ];
         text = builtins.readFile ./_pi-sessions/preview.bash;
       };
+      switch = pkgs.writeShellApplication {
+        name = "pi-sessions-switch";
+        runtimeInputs = [ ];
+        text = builtins.readFile ./_pi-sessions/switch.bash;
+      };
     in
     {
       television.extraChannels.pi-sessions = {
@@ -85,13 +90,15 @@
 
         # No `enter` action on purpose: with none defined tv prints the
         # `output` template, which is what makes `pi --session (tv
-        # pi-sessions)` work. alt-s (rather than ctrl-s, which cycles the
-        # source modes) is the only side effect, and only fires for a session
-        # that still has a live pane.
+        # pi-sessions)` work. The tmux popup (`prefix p`, shell/tmux.nix)
+        # rebinds enter to `switch` at the call site -- the same trick the
+        # `files` popup uses, since a printed id would close the popup having
+        # done nothing. alt-s (ctrl-s is taken: it cycles the source modes)
+        # gets the same action everywhere else.
         keybindings.alt-s = "actions:switch";
         actions.switch = {
           description = "Switch this tmux client to the session's pane";
-          command = "tmux switch-client -t '{split:\t:3}'";
+          command = "${switch}/bin/pi-sessions-switch '{split:\t:3}'";
           mode = "execute";
         };
       };

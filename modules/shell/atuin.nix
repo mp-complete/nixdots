@@ -14,8 +14,27 @@
       enableFishIntegration = true;
       enableNushellIntegration = true;
 
+      # Route history writes through a long-lived daemon instead of having every
+      # shell hook open the SQLite store directly. That kills the per-command
+      # write contention (and the "database is locked" stalls) you get with many
+      # concurrent shells, and moves sync off the interactive path.
+      #
+      # home-manager wires this as a socket-activated systemd user unit and sets
+      # `daemon.enabled` / `daemon.systemd_socket` for us, so atuin's own
+      # `daemon.autostart` stays off (its default) -- systemd owns the lifecycle.
+      daemon.enable = true;
+
       # Up-arrow stays fish's own prefix search; ctrl-r is atuin's.
-      flags = [ "--disable-up-arrow" ];
+      #
+      # `--disable-ai` is not redundant with `ai.enabled = false` below. atuin
+      # 18.18 binds `?` to its AI chat at init time, and home-manager pre-renders
+      # `atuin init fish` in a build sandbox with a throwaway HOME -- that
+      # generation never sees our config.toml, so only the flag keeps `?` free in
+      # fish. The setting covers the paths that read config at runtime.
+      flags = [
+        "--disable-up-arrow"
+        "--disable-ai"
+      ];
 
       settings = {
         sync_frequency = "5m";
@@ -23,6 +42,10 @@
         # up-arrow (when atuin is bound to it) scopes to the current session.
         filter_mode = "directory";
         filter_mode_shell_up_arrow = "session";
+
+        # No LLM in the shell history tool. This also stops `?` on an empty
+        # prompt from opening the AI UI.
+        ai.enabled = false;
       };
     };
   };
