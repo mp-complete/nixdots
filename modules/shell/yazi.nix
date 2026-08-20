@@ -122,5 +122,14 @@
         enableNushellIntegration = true;
         shellWrapperName = "y";
       };
+
+      # `y` is the wrapper that actually follows yazi's `--cwd-file` back into
+      # the shell, but bare `yazi` still gets typed (and the cd silently lost).
+      # Rewrite it at command position only, so `command yazi` and
+      # `which yazi` are untouched.
+      programs.fish.shellAbbrs.yazi = {
+        position = "command";
+        expansion = "y";
+      };
     };
 }

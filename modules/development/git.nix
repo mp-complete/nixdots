@@ -89,6 +89,15 @@
       };
       programs.gh.enable = true;
       programs.lazygit.enable = true;
+
+      # home-manager's lazygit module ships an `lg` fish function that honours
+      # LAZYGIT_NEW_DIR_FILE, i.e. it follows lazygit's `cd` on exit. History
+      # says bare `lazygit` still gets typed 44 times over `lg`, throwing that
+      # away; rewrite it at command position (so `command lazygit` still works).
+      programs.fish.shellAbbrs.lazygit = {
+        position = "command";
+        expansion = "lg";
+      };
       home.packages = [
         pkgs.delta
       ]

@@ -81,12 +81,68 @@ in
         "procs"
         "ssh-hosts"
         "man-pages"
-        # session management (shell/sesh.nix, shell/tmux.nix)
-        "sesh"
-        # NB: `tmux-sessions` / `tmux-windows` are deliberately absent -- the
-        # upstream versions are unusable from inside tmux and are replaced by
-        # the definitions further down.
+        # NB: `sesh`, `tmux-sessions` and `tmux-windows` are deliberately
+        # absent -- the upstream versions are either unusable from inside tmux
+        # or need extra actions, and are replaced by the definitions further
+        # down (session management: shell/sesh.nix, shell/tmux.nix).
       ];
+
+      # Backs the sesh channel's per-program actions (`alt-y` / `alt-p`).
+      # Written as a script rather than inlined into the action's `command`
+      # because the new/existing decision needs more than one shell statement.
+      #
+      # Everything runs through `tmux send-keys`, i.e. the program is typed
+      # into the target session's shell. That resolves it against the *user's*
+      # PATH rather than tv's or the tmux server's (which matters for `pi`,
+      # since the binary is either pi-desktop or pi-wsl depending on the host),
+      # and quitting the program leaves a usable prompt instead of a window
+      # that vanishes.
+      seshOpen = pkgs.writeShellScript "sesh-open" ''
+        # usage: sesh-open <program> <sesh entry>
+        prog=$1
+        entry=$2
+
+        if [ -n "''${TMUX:-}" ]; then
+            # Which sessions existed *before* connecting. `tmux has-session
+            # -t="$entry"` cannot answer this: for a zoxide/dir entry the
+            # entry is a path while sesh derives the session name from it
+            # (connector/dir.go -> namer), so `~/src/foo` becomes `foo`. The
+            # snapshot avoids reimplementing that naming.
+            before=$(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)
+
+            sesh connect "$entry" || exit $?
+
+            # `sesh connect` inside tmux is `switch-client`, so the current
+            # client is now on the target session -- true even from inside a
+            # `display-popup`, and the value updates synchronously.
+            session=$(tmux display-message -p '#{client_session}')
+
+            if printf '%s\n' "$before" | grep -qxF -- "$session"; then
+                # Session already existed: give the program its own window.
+                # Target the returned @id, not "$session:$prog" -- window
+                # names are not unique, and a repeat press would otherwise
+                # send keys to the *previous* window of the same name.
+                target=$(tmux new-window -t "$session" -n "$prog" -P -F '#{window_id}')
+            else
+                # Brand new session: type into the shell sesh just started,
+                # which is exactly what `sesh connect -c` does internally.
+                target=$session
+            fi
+
+            exec tmux send-keys -t "$target" "$prog" Enter
+        fi
+
+        # Outside tmux there is no client to interrogate and `sesh connect`
+        # *attaches* (blocking), so any window work has to happen first. Only
+        # exact session names can be resolved here; anything else falls back to
+        # sesh's own startup command, which fires for new sessions only.
+        if tmux has-session -t="$entry" 2>/dev/null; then
+            target=$(tmux new-window -t "$entry" -n "$prog" -P -F '#{window_id}')
+            tmux send-keys -t "$target" "$prog" Enter
+            exec sesh connect "$entry"
+        fi
+        exec sesh connect -c "$prog" "$entry"
+      '';
 
       # Catppuccin Macchiato -- matches kitty (desktop/apps/kitty.nix), yazi
       # (shell/yazi.nix) and rofi (desktop/apps/rofi.nix). tv ships a builtin
@@ -122,6 +178,9 @@ in
         jq
         eza
         sesh
+        # For the tmux-* channels and `seshOpen` above. Appended to PATH, so a
+        # tmux already on PATH (the popup case) still wins.
+        tmux
       ];
 
       settings = {
@@ -310,6 +369,98 @@ in
           };
         };
 
+        # Vendored from upstream's `cable/unix/sesh.toml` (hence the absence
+        # of "sesh" from `upstreamChannels`) so that extra actions can be
+        # bolted on. There is no lighter way to do that: `tv`'s `-k` /
+        # `--keybindings` flag only rebinds *existing* actions, and there is
+        # no `--actions`, so the whole prototype has to live here. Keep in
+        # sync with upstream when the television input is bumped.
+        #
+        # Reached via `prefix b` (shell/tmux.nix) as well as plain `tv sesh`.
+        sesh =
+          let
+            # Upstream's template: `sesh list --icons` prefixes each line with
+            # a coloured nerd-font glyph, so drop column 0 and the ANSI codes.
+            entry = "{strip_ansi|split: :1..|join: }";
+
+            # `sesh connect -c CMD` would have been the whole implementation,
+            # but it is gated on the session being *new* (connector/tmux.go:
+            # `if connection.New { NewSession(); SendKeys(CMD) }`), so picking
+            # a session that already exists would silently do nothing. The
+            # helper keeps that behaviour for new sessions and opens a fresh
+            # window for existing ones.
+            openWith = program: {
+              description = "Connect, opening ${program} (new window if the session exists)";
+              command = "${seshOpen} ${program} '${entry}'";
+              mode = "execute";
+            };
+          in
+          {
+            metadata = {
+              name = "sesh";
+              description = "Session manager integrating tmux sessions, zoxide directories, and config paths";
+              requirements = [
+                "sesh"
+                "fd"
+              ];
+            };
+            # ctrl-s cycles these modes.
+            source = {
+              command = [
+                {
+                  name = "All";
+                  run = "sesh list --icons";
+                }
+                {
+                  name = "Tmux";
+                  run = "sesh list -t --icons";
+                }
+                {
+                  name = "Configs";
+                  run = "sesh list -c --icons";
+                }
+                {
+                  name = "Zoxide";
+                  run = "sesh list -z --icons";
+                }
+                {
+                  name = "Directories";
+                  run = "fd -H -d 2 -t d -E .Trash . ~";
+                }
+              ];
+              ansi = true;
+              frecency = false; # handled by sesh
+              no_sort = true; # handled by sesh
+              output = entry;
+            };
+            preview.command = "sesh preview '${entry}'";
+            keybindings = {
+              enter = "actions:connect";
+              ctrl-d = [
+                "actions:kill_session"
+                "reload_source"
+              ];
+              # alt- rather than ctrl-: tv's defaults already claim ctrl-y
+              # (copy_entry_to_clipboard) and ctrl-p (select_prev_entry).
+              alt-y = "actions:connect_yazi";
+              alt-p = "actions:connect_pi";
+            };
+            actions = {
+              connect = {
+                description = "Connect to selected session";
+                command = "sesh connect '${entry}'";
+                mode = "execute";
+              };
+              kill_session = {
+                description = "Kill selected tmux session (press Ctrl+r to reload)";
+                command = "tmux kill-session -t '${entry}'";
+                mode = "fork";
+              };
+              connect_yazi = openWith "yazi";
+              connect_pi = openWith "pi";
+            };
+          };
+
         # tmux session / window pickers, replacing the upstream channels of
         # the same name (see `upstreamChannels` above). The vendored ones are
         # broken for the way they are actually used here -- from a
@@ -489,6 +640,41 @@ in
               if bind -M insert >/dev/null 2>&1
                   bind -M insert ctrl-r _atuin_search
               end
+          end
+
+          # Action-shaped tv widgets. ctrl-t (smart autocomplete) *inserts* a
+          # token; these instead run the channel's `enter` action and hand the
+          # prompt back. Worth their own keys because neither channel has a
+          # command prefix in `channel_triggers` that ctrl-t could key off --
+          # you would have to type `sesh ` first, insert a name, then hit
+          # enter.
+          #
+          # Fullscreen rather than `--inline`: `mode = "execute"` is
+          # `cmd.exec()` in tv (television/utils/command.rs), so the process
+          # *becomes* sesh/tmux and takes over the terminal, which would
+          # otherwise be drawn over the prompt. Nothing is piped either --
+          # execute-mode tv prints no selection of its own, and redirecting
+          # stdout would push tv onto its `attach_to_tty` fallback, which
+          # reopens /dev/tty and is documented upstream to break `tmux
+          # attach`.
+          function tv_exec --description "Run a tv channel for its enter action"
+              tv $argv
+              commandline -f repaint
+          end
+
+          # Shell twins of the tmux popups in shell/tmux.nix -- alt-b mirrors
+          # `prefix b` (tv sesh) and alt-m mirrors `prefix w` (tv
+          # tmux-windows), so the same pickers are one chord away without a
+          # prefix key. alt- rather than ctrl-alt-: the latter belongs to
+          # fzf-fish, while fish 4.8 ships no alt- presets at all.
+          #
+          # The `for mode in default insert` form is lifted from upstream's
+          # completion.fish (sourced above), which binds both unconditionally;
+          # `tmux-windows` only lists anything from inside tmux, which is the
+          # only place it makes sense anyway.
+          for mode in default insert
+              bind --mode $mode alt-b "tv_exec sesh"
+              bind --mode $mode alt-m "tv_exec tmux-windows"
           end
         '';
       };

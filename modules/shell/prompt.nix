@@ -1,6 +1,10 @@
 {
   flake.modules.homeManager.base = {
     programs.starship.enable = true;
+    # Redraw scrolled-back prompts as a bare glyph, keeping only the live
+    # prompt in full. Worth it here because tmux scrollback is searched with
+    # `tv text` over pane captures (shell/television.nix).
+    programs.starship.enableTransience = true;
     programs.starship.settings = {
       aws.disabled = true;
       directory.read_only = " 󰌾";
