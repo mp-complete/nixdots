@@ -1,0 +1,25 @@
+{
+  "name": "pi-scan-guard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pi extension that blocks unbounded filesystem scans (find / , rg /nix/store, …) before they run.",
+  "license": "MIT",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "guardrail",
+    "wsl"
+  ],
+  "scripts": {
+    "test": "node --test 'test/*.test.mjs'"
+  },
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}

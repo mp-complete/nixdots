@@ -20,6 +20,7 @@ let
     "pi-subagents" # async subagent delegation and coordination
     "pi-copilot-discovery" # dynamic GitHub Copilot model discovery
     "pi-nested-agent-md" # inject nested AGENTS.md instructions on file reads
+    "pi-scan-guard" # block unbounded filesystem scans (find /, rg /nix/store)
   ];
   wslExtensions = desktopExtensions ++ [
     "pi-wsl-images" # Alt+V image paste from the Windows clipboard
@@ -40,6 +41,7 @@ let
     "pi-web-access" # fetch docs/URLs — most doc-drift jobs want this
     "pi-copilot-discovery" # dynamic model discovery
     "pi-nested-agent-md" # nested AGENTS.md on file reads
+    "pi-scan-guard" # hard-block unbounded scans (no UI to approve them)
     "notify" # push job outcomes to Gotify/ntfy
   ];
 
