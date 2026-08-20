@@ -16,6 +16,15 @@ in
       # Container-based jobs (`runs-on: ubuntu-latest`) need a runtime.
       virtualisation.docker.enable = true;
 
+      # The runner pings /var/run/docker.sock at startup and exits 1 if it is
+      # not listening yet. Without this, activation can start the runner and
+      # docker.socket in the same batch and the runner loses the race (it does
+      # recover on the next restart, but activation reports a failed unit).
+      systemd.services."gitea-runner-${config.networking.hostName}" = {
+        after = [ "docker.socket" ];
+        requires = [ "docker.socket" ];
+      };
+
       sops.secrets.forgejo-runner-token = {
         sopsFile = ../../secrets/general.yaml;
         key = "forgejo-runner-token";
