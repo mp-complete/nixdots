@@ -38,7 +38,6 @@ let
   # excluded: pi-catppuccin (TUI theme), rpiv-todo, rpiv-btw,
   # rpiv-ask-user-question, edb-agent-steer, pi-interview.
   daemonExtensions = [
-    "pi-hermes-memory" # cross-run memory + session search (isolated agent dir)
     "pi-web-access" # fetch docs/URLs — most doc-drift jobs want this
     "pi-copilot-discovery" # dynamic model discovery
     "pi-nested-agent-md" # nested AGENTS.md on file reads

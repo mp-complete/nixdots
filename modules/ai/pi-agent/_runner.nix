@@ -144,7 +144,7 @@ pkgs.writeShellApplication {
     export RUN_ID RUN_LOG WORKDIR JOB_DIR
 
     # Serialize every pi invocation on this host: concurrent jobs would
-    # otherwise race on auth.json refresh and the hermes-memory sqlite lock.
+    # otherwise race on auth.json refresh.
     exec 9>"$AGENT_DIR/.pi-agent.lock"
     flock 9
 
