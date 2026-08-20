@@ -303,6 +303,12 @@ in
             ];
             "man-pages" = [ "man" ];
             "sesh" = [ "sesh" ];
+            # Channel from modules/ai/pi-sessions.nix; every host enables the
+            # `ai` bucket, so it is always present.
+            "pi-sessions" = [
+              "pi --session"
+              "pi --fork"
+            ];
             # fish abbreviations (shell/fish.nix) -- see the `abbrs` channel.
             "abbrs" = [ "abbr" ];
             "nixdots" = [
