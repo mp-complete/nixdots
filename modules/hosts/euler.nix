@@ -24,6 +24,7 @@ in
       "qmk"
       "dev"
       "ai"
+      "photography"
       "skills"
       "syncthing"
       "virt"
