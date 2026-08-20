@@ -381,15 +381,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1786968662,
-        "narHash": "sha256-l+XkQXdrxYyIIcCo6ffr4PCLttYU3ybSypGbBOQ8Soo=",
-        "owner": "BirdeeHub",
+        "lastModified": 1787244954,
+        "narHash": "sha256-REL4T/+J3c6uAifIACG1tuQPiIxwZvz8amZwV8lvpqw=",
+        "owner": "milespossing",
         "repo": "nix-wrapper-modules",
-        "rev": "977894e4ffaeade49d5bfac663bae63ee2d19694",
+        "rev": "a65c4cfa0a3a4a459c7808c43b93a292e9530df7",
         "type": "github"
       },
       "original": {
-        "owner": "BirdeeHub",
+        "owner": "milespossing",
+        "ref": "fix/television-themes",
         "repo": "nix-wrapper-modules",
         "type": "github"
       }

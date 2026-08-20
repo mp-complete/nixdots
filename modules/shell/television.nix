@@ -33,7 +33,6 @@ in
       pkgs,
       lib,
       wlib,
-      config,
       ...
     }:
     let
@@ -403,59 +402,36 @@ in
         };
       };
 
-      # The wrapper module's `themes` option is a no-op as far as `tv` is
-      # concerned: it writes `<out>/tv-themes/`, but tv has no themes flag and
-      # resolves a theme name purely as
-      # `get_config_dir()/themes/<name>.toml` (television/config/themes.rs),
-      # falling back to the builtin/default theme *silently* when that file is
-      # missing. So instead of `themes`, hand tv a real config directory via
-      # `TELEVISION_CONFIG` -- the same trick desktop/apps/kitty.nix uses with
-      # `KITTY_CONFIG_DIRECTORY`.
-      #
-      # `cable/.keep` is load-bearing: `ConfigEnv::init()` unconditionally runs
-      # `create_dir_all(config_dir/cable)`, which fails hard against a
-      # read-only store path when that subdirectory does not already exist
-      # ("Error: Failed creating cable directory: Permission denied"). The
-      # actual channels are passed separately via `--cable-dir`, which takes
-      # precedence, so this directory stays empty on purpose.
-      constructFiles = {
-        macchiatoTheme = {
-          relPath = "themes/catppuccin-macchiato.toml";
-          builder = ''${pkgs.remarshal}/bin/json2toml "$1" "$2"'';
-          content = builtins.toJSON {
-            background = macchiato.base;
-            border_fg = macchiato.overlay0;
-            text_fg = macchiato.text;
-            dimmed_text_fg = macchiato.overlay0;
+      # `tv` has no themes flag: a theme named in `settings.ui.theme` is
+      # resolved only as `<config dir>/themes/<name>.toml`, and missing files
+      # fall back to the builtin/default theme *silently*. The wrapper module
+      # handles that by exporting `TELEVISION_CONFIG` whenever `themes` is
+      # non-empty -- see the fix this flake pins nix-wrapper-modules to.
+      themes.catppuccin-macchiato = {
+        background = macchiato.base;
+        border_fg = macchiato.overlay0;
+        text_fg = macchiato.text;
+        dimmed_text_fg = macchiato.overlay0;
 
-            input_text_fg = macchiato.red;
-            result_count_fg = macchiato.red;
+        input_text_fg = macchiato.red;
+        result_count_fg = macchiato.red;
 
-            result_name_fg = macchiato.blue;
-            result_line_number_fg = macchiato.yellow;
-            result_value_fg = macchiato.lavender;
-            selection_fg = macchiato.green;
-            selection_bg = macchiato.surface0;
-            match_fg = macchiato.red;
+        result_name_fg = macchiato.blue;
+        result_line_number_fg = macchiato.yellow;
+        result_value_fg = macchiato.lavender;
+        selection_fg = macchiato.green;
+        selection_bg = macchiato.surface0;
+        match_fg = macchiato.red;
 
-            preview_title_fg = macchiato.peach;
+        preview_title_fg = macchiato.peach;
 
-            channel_mode_fg = macchiato.base;
-            channel_mode_bg = macchiato.pink;
-            remote_control_mode_fg = macchiato.base;
-            remote_control_mode_bg = macchiato.green;
-            action_picker_mode_fg = macchiato.base;
-            action_picker_mode_bg = macchiato.mauve;
-          };
-        };
-
-        cablePlaceholder.relPath = "cable/.keep";
+        channel_mode_fg = macchiato.base;
+        channel_mode_bg = macchiato.pink;
+        remote_control_mode_fg = macchiato.base;
+        remote_control_mode_bg = macchiato.green;
+        action_picker_mode_fg = macchiato.base;
+        action_picker_mode_bg = macchiato.mauve;
       };
-
-      # `<out>/cable/.keep` -> `<out>/cable` -> `<out>`, i.e. the wrapper's
-      # own output root, which is where `themes/` and `cable/` were just
-      # placed.
-      env.TELEVISION_CONFIG = builtins.dirOf (builtins.dirOf config.constructFiles.cablePlaceholder.path);
     };
 
   flake.modules.homeManager.base =
@@ -488,12 +464,11 @@ in
         ];
 
         programs.fish.interactiveShellInit = lib.mkAfter ''
-          # television's fish integration. Sourced by hand -- and from the
-          # unwrapped package, since the wrapper output only carries `bin/` --
-          # because the upstream snippet unconditionally binds ctrl-t and
-          # ctrl-r. mkAfter (order 1500) puts it after fzf's and atuin's init
-          # so the final keymap is explicit rather than dependent on module
-          # evaluation order.
+          # television's fish integration, sourced by hand rather than via an
+          # `enable*Integration` flag because the upstream snippet
+          # unconditionally binds ctrl-t and ctrl-r. mkAfter (order 1500) puts
+          # it after fzf's and atuin's init so the final keymap is explicit
+          # rather than dependent on module evaluation order.
           source ${pkgs.television}/share/television/completion.fish
 
           # ctrl-t is now tv's smart autocomplete. Move fzf's plain file widget

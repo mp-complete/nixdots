@@ -59,18 +59,10 @@
           }
         '';
       };
-      programs.atuin = {
-        enable = true;
-        enableBashIntegration = true;
-        enableFishIntegration = true;
-        enableNushellIntegration = true;
-        flags = [ "--disable-up-arrow" ];
-        settings = {
-          sync_frequency = "5m";
-          filter_mode = "directory";
-          filter_mode_shell_up_arrow = "session";
-        };
-      };
+      # NB: `programs.atuin` is configured in shell/atuin.nix, not here. Two
+      # definitions of `flags` in the same bucket concatenate rather than
+      # override, and `atuin init` rejects a repeated `--disable-up-arrow`,
+      # which made home-manager emit an empty fish integration file.
       home.packages = with pkgs; [
         gum
         ripgrep

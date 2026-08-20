@@ -18,7 +18,12 @@
     };
     sops-nix.url = "github:Mic92/sops-nix";
     nix-wrapper-modules = {
-      url = "github:BirdeeHub/nix-wrapper-modules";
+      # Temporarily pinned to a fork carrying the fix in
+      # <https://github.com/milespossing/nix-wrapper-modules/tree/fix/television-themes>:
+      # upstream's television module writes `themes` to a directory `tv` never
+      # reads, so a configured theme silently degrades to the builtin default.
+      # Revert to `github:BirdeeHub/nix-wrapper-modules` once that is merged.
+      url = "github:milespossing/nix-wrapper-modules/fix/television-themes";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     llm-agents = {
