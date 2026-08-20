@@ -4,7 +4,9 @@
 { nixpkgs-master }:
 final: prev:
 let
-  pkgs-master = import nixpkgs-master { inherit (prev) system; };
+  # `prev.system` is a deprecated nixpkgs alias; the platform string now lives
+  # on stdenv.hostPlatform.
+  pkgs-master = import nixpkgs-master { inherit (prev.stdenv.hostPlatform) system; };
 in
 {
   inherit (pkgs-master) azure-cli;
