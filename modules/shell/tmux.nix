@@ -1,4 +1,9 @@
 { config, ... }:
+let
+  # The flake-parts `config`, captured before the wrapper module below shadows
+  # the name with its own `config`.
+  flakeCfg = config;
+in
 {
   flake.wrappers.tmux =
     {
@@ -11,14 +16,22 @@
       imports = [ wlib.wrapperModules.tmux ];
       package = pkgs.tmux;
 
-      # Self-contained: the worktrunk popup pipes through `jq`, and the sesh
-      # popups (`bind b` / `bind C-w`) plus the `sesh last` bind shell out to
-      # `sesh`. runtimePkgs is appended to PATH, so a globally-installed one
-      # (shell/sesh.nix puts sesh in the core shell) still wins, but the wrapper
-      # never depends on either being present.
+      # Self-contained: `run-shell "sesh last"` and the tv popups run with the
+      # tmux *server's* PATH, not a login shell's. runtimePkgs is appended to
+      # PATH, so the globally-installed sesh (shell/sesh.nix) and tv
+      # (shell/television.nix) still win -- this is only the floor so the
+      # wrapper never hard-depends on either being present. jq backs the
+      # `worktrunk` channel's source command.
+      #
+      # The *wrapped* television is used deliberately: `pkgs.television` on its
+      # own has no config, no channels and no theme, so every `tv <channel>`
+      # binding below would fail against it. The floor omits the `worktrunk`
+      # channel, which the `dev` bucket contributes at install time -- as does
+      # `wt` itself, so `prefix C-w` already depends on that bucket either way.
       runtimePkgs = [
         pkgs.jq
         pkgs.sesh
+        (flakeCfg.flake.wrappers.television.wrap { inherit pkgs; })
       ];
 
       prefix = "C-a";
@@ -61,19 +74,30 @@
         }
       ];
 
-      configBefore = ''
+      # NOTE: there is deliberately no `configBefore`. The wrapper emits, in
+      # order: configBefore -> each plugin's `run-shell` -> configAfter. A
+      # non-backgrounded `run-shell` blocks tmux's command queue until the
+      # script exits, so plugin bindings land *between* the two blocks and
+      # silently overwrite anything configBefore bound. pain-control binds
+      # h/j/k/l, C-h/C-j/C-k/C-l, H/J/K/L, | \ - _, " % and c -- which is how
+      # `bind L run-shell "sesh last"` came to be dead code (pain-control
+      # rebinds L to resize-pane -R). Everything custom therefore lives in
+      # configAfter, where it reliably wins.
+      configAfter = ''
         # Re-bind prefix-a to send-prefix so it still reaches the inner app
         bind -N "Send the prefix key through to the application" a send-prefix
 
         # Quick config reload (path of the wrapper-generated tmux.conf)
         bind R source-file ${config.constructFiles.generatedConfig.path} \; display-message "tmux config reloaded"
 
-        # Split panes in the current working directory
+        # Split panes in the current working directory. pain-control binds
+        # these identically; kept so the behaviour is stated here rather than
+        # inherited silently from a plugin.
         bind '"' split-window -v -c "#{pane_current_path}"
         bind '%' split-window -h -c "#{pane_current_path}"
         bind c new-window -c "#{pane_current_path}"
 
-        # Easier window swap
+        # Easier window swap (also bound by pain-control, to the same thing)
         bind -r "<" swap-window -d -t -1
         bind -r ">" swap-window -d -t +1
 
@@ -87,20 +111,66 @@
         # Lazygit in a floating popup, opened in the focused pane's CWD
         bind g display-popup -E -d "#{pane_current_path}" -w 90% -h 90% ${pkgs.lazygit}/bin/lazygit
 
-        # sesh for tmux sessions
-        bind b display-popup -E -w 40% "sesh connect \"$(
-          sesh list -i | gum filter --no-strip-ansi --limit 1 --no-sort --fuzzy --placeholder 'Pick a sesh' --height 50 --prompt='⚡'
-        )\""
+        # --- television (tv) pickers ------------------------------------
+        #
+        # `display-popup -E` closes the popup as soon as the command exits.
+        # Channels whose Enter action uses `mode = "execute"` act on the
+        # selection themselves, so unlike the `gum filter` popups these
+        # replace, there is no `"$(...)"` capture and no shell quoting to get
+        # wrong. Channels that only *print* their selection would close the
+        # popup having done nothing, so those get an explicit Enter binding
+        # via `--keybindings` at the call site.
+        #
+        # Sizes are uniform at 80% -- tv's landscape layout gives half the
+        # width to the preview panel, so the 40%-wide gum popups were too
+        # narrow to read.
 
-        # sesh's recommended binds. With `detach-on-destroy off` (set below) the
-        # default prefix-L breaks once a detached session is destroyed, so route
-        # it through `sesh last`. prefix-x kills the pane without the y/n prompt.
+        # Sessions: tmux sessions + zoxide dirs + configured projects.
+        # ctrl-s cycles All/Tmux/Configs/Zoxide, ctrl-d kills a session.
+        bind b display-popup -E -w 80% -h 80% "tv sesh"
+
+        # Last session. With `detach-on-destroy off` (below) tmux's own
+        # last-session breaks once a detached session is destroyed, so route
+        # it through sesh. This is the binding pain-control used to clobber.
         bind -N "last session (via sesh)" L run-shell "sesh last"
-        bind x kill-pane
 
-        bind C-w display-popup -E -w 40% "wt switch --no-cd -x \'sesh connect {{ worktree_path }}\' \"$(
-          wt list --format json | jq \'map(.branch).[]\' -r | gum filter --limit 1 --no-sort --fuzzy --placeholder 'Pick a branch' --height 50
-        )\""
+        # Worktrunk worktrees -> sesh session at the worktree path. Replaces
+        # a `wt list | jq | gum filter` pipeline whose `{{ worktree_path }}`
+        # placeholder needed three levels of escaping.
+        bind C-w display-popup -E -w 80% -h 80% "tv worktrunk"
+
+        # Every window in every session; Enter switches this client to it.
+        # Depends on the tmux-windows channel redefined in
+        # shell/television.nix -- the upstream one does nothing on Enter.
+        bind w display-popup -E -w 80% -h 80% "tv tmux-windows"
+
+        # Files under the focused pane's CWD, opened in $EDITOR. Enter is
+        # bound here rather than in the channel because `files` is also tv's
+        # ctrl-t fallback channel in fish (shell/television.nix), where
+        # printing the path to the prompt is the correct behaviour.
+        bind f display-popup -E -d "#{pane_current_path}" -w 80% -h 80% "tv files --keybindings='enter=\"actions:edit\"'"
+
+        # Ripgrep the pane's CWD; Enter opens $EDITOR at the matching line.
+        bind / display-popup -E -d "#{pane_current_path}" -w 80% -h 80% "tv text"
+
+        # This flake, from anywhere (custom `nixdots` channel).
+        bind e display-popup -E -w 80% -h 80% "tv nixdots"
+
+        # Git branches: Enter checks out, ctrl-d deletes, ctrl-m merges,
+        # ctrl-r rebases onto.
+        bind C-g display-popup -E -d "#{pane_current_path}" -w 80% -h 80% "tv git-branch"
+
+        # Git log browser. The channel's own actions are ctrl-y cherry-pick /
+        # ctrl-r revert / ctrl-o checkout; Enter drops the sha into the tmux
+        # paste buffer so it can be pasted into whatever command prompted the
+        # lookup. Single-quoted on purpose: tmux expands $name inside double
+        # quotes, which would eat $sha before the popup's shell ever sees it.
+        bind C-f display-popup -E -d "#{pane_current_path}" -w 80% -h 80% 'sha=$(tv git-log) && [ -n "$sha" ] && tmux set-buffer -- "$sha"'
+
+        # ----------------------------------------------------------------
+
+        # prefix-x kills the pane without the y/n prompt.
+        bind x kill-pane
 
         bind C-n display-popup -E -w 20% "wt switch --no-cd -x \'sesh connect {{ worktree_path }}\' -c \"$(
           gum input --placeholder 'New branch name' --height 10
@@ -125,9 +195,7 @@
         bind-key -T copy-mode-vi C-j select-pane -D
         bind-key -T copy-mode-vi C-k select-pane -U
         bind-key -T copy-mode-vi C-l select-pane -R
-      '';
 
-      configAfter = ''
         # Enable CSI u / extended key reporting so modifiers like
         # Ctrl/Shift/Alt on otherwise-ambiguous keys (e.g. C-Enter,
         # S-Enter, C-/) reach the inner application. `always` makes tmux
