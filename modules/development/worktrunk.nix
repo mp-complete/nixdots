@@ -1,46 +1,24 @@
 { config, ... }:
 {
+  # Deliberately unconfigured. worktrunk's user config
+  # (`~/.config/worktrunk/config.toml`) is a layer it *writes to* itself:
+  # `wt config create`/`update` migrations, the first-run
+  # `skip-shell-integration-prompt` / `skip-commit-generation-prompt` flags,
+  # and — via `approvals_path() = config_path().with_file_name(...)` —
+  # `approvals.toml`, where `wt` records approved hook commands.
+  #
+  # Pinning it into the store with `WORKTRUNK_CONFIG_PATH` made all of those
+  # writes fail silently, so hook approvals could never persist. worktrunk has
+  # a lower, read-only `system` layer meant for this (`/etc/xdg/worktrunk/`,
+  # or `WORKTRUNK_SYSTEM_CONFIG_PATH`), but with only a handful of settings
+  # worth declaring, it isn't worth the split-brain. The user config is now
+  # hand-managed; see <https://worktrunk.dev/config/>.
   flake.wrappers.worktrunk =
-    {
-      config,
-      lib,
-      wlib,
-      pkgs,
-      ...
-    }:
-    let
-      tomlType = wlib.types.structuredValueWith {
-        nullable = false;
-        typeName = "TOML";
-      };
-      hasConfig = config.settings != { };
-    in
+    { pkgs, wlib, ... }:
     {
       imports = [ wlib.modules.default ];
-
-      options.settings = lib.mkOption {
-        type = tomlType;
-        default = { };
-        example = {
-          worktree-path = "~/worktrees/{{repo}}/{{branch}}";
-        };
-        description = ''
-          Contents of worktrunk's `config.toml`, delivered via
-          `WORKTRUNK_CONFIG_PATH`. See <https://worktrunk.dev/config/>.
-        '';
-      };
-
-      config = {
-        package = pkgs.worktrunk;
-        # The base package (worktrunk flake input) is supplied by the registry.
-        env.WORKTRUNK_CONFIG_PATH = lib.mkIf hasConfig "${placeholder config.outputName}/${config.binName}-config/config.toml";
-
-        constructFiles.config = lib.mkIf hasConfig {
-          relPath = lib.mkOverride 0 "${config.binName}-config/config.toml";
-          content = builtins.toJSON config.settings;
-          builder = ''${pkgs.remarshal}/bin/json2toml "$1" "$2"'';
-        };
-      };
+      # The base package (worktrunk flake input) is supplied by the registry.
+      config.package = pkgs.worktrunk;
     };
 
   # worktrunk: Git worktree management CLI (https://worktrunk.dev).

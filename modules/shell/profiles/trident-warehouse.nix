@@ -17,9 +17,6 @@
           config.flake.modules.devShell.trident-warehouse;
     };
 
-  flake.wrappers.worktrunk.settings.projects."dev.azure.com/powerbi/Trident/_git/TridentWarehouse-UX" =
-    {
-      worktree-path = "{{ repo_path }}/../{{ branch | sanitize }}";
-      post-start = "yarn install && yarn build";
-    };
+  # worktrunk settings for this repo live in the hand-managed user config at
+  # `~/.config/worktrunk/config.toml`, not here — see modules/development/worktrunk.nix.
 }
