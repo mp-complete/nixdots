@@ -12,3 +12,12 @@ precedence when they are more specific.
 - For multi-step implementation work, keep a task list and update it as tasks complete.
 - Validate changes with the narrowest relevant command, and clearly say what was not run.
 - Treat secrets as sensitive: never print, commit, or write unencrypted secret values.
+- Resolve paths with the domain's own tooling, not generic filesystem search. In a
+  flake, a store path comes from `nix eval --raw .#inputs.<name>.outPath`,
+  `nix flake metadata --json`, `nix build --print-out-paths`, or `nix eval` on a
+  config attr — never from hunting `/nix/store`. Ask "what is authoritative here?"
+  before reaching for `find`/`rg`.
+- Never scan the filesystem from `/` or `/nix/store`. These are WSL hosts with
+  `/mnt/c` mounted, so an unbounded scan crawls the Windows drive and hangs. If a
+  search is genuinely necessary, root it at a specific directory and bound it with
+  `-maxdepth`.
