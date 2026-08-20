@@ -303,6 +303,8 @@ in
             ];
             "man-pages" = [ "man" ];
             "sesh" = [ "sesh" ];
+            # fish abbreviations (shell/fish.nix) -- see the `abbrs` channel.
+            "abbrs" = [ "abbr" ];
             "nixdots" = [
               "nix"
               "nh"
@@ -367,6 +369,46 @@ in
             shell = "bash";
             mode = "execute";
           };
+        };
+
+        # Discovery surface for abbreviations. fish exposes them through
+        # tab-completion descriptions (`n<TAB>` -> "nos  Abbreviation: nh os
+        # switch") and `abbr --show`, and nothing else: `type nos` reports
+        # "Could not find", `functions -q` is blind to them, `alias` lists a
+        # different namespace, and `fish_config browse` has no page for them.
+        # That matters more since `programs.fish.preferAbbrs`
+        # (shell/fish.nix) moved most aliases into this namespace.
+        #
+        # Reachable from `abbr <ctrl-t>` (see `channel_triggers` above) or
+        # from remote control.
+        abbrs = {
+          metadata = {
+            name = "abbrs";
+            description = "fish abbreviations and what they expand to";
+            requirements = [ "fish" ];
+          };
+          source = {
+            # `fish -ic`, not a bare command: abbreviations are defined in
+            # interactiveShellInit, and tv runs source commands under $SHELL,
+            # which here is bash -- fish is the *interactive* shell only
+            # (shell/fish.nix). stderr is dropped because an interactive fish
+            # on a pipe warns about unanswered terminal queries.
+            #
+            # `abbr --list` yields names only and `abbr --show` whole
+            # `abbr --add -- name 'expansion'` lines, so the expansion is
+            # recovered per name. \Q..\E stops names like `!` being read as
+            # regex, and `string trim -c \x27` strips the quotes `--show`
+            # adds without putting a literal ' inside the outer sh string.
+            command = ''fish -ic 'for a in (abbr --list); printf "%s\t%s\n" $a (string trim -c \x27 -- (abbr --show | string match -r -- "-- \Q$a\E (.*)\$")[2]); end' 2>/dev/null'';
+            display = "{split:	:0} → {split:	:1}";
+            # The name, not the expansion: the point of the `abbr` trigger is
+            # to complete `abbr <name>`, and typing the name at a prompt
+            # expands it anyway.
+            output = "{split:	:0}";
+          };
+          # Long expansions get truncated in the results panel.
+          preview.command = "fish -ic 'abbr --show' 2>/dev/null | grep -F -- ' {split:	:0} '";
+          ui.preview_panel.size = 30;
         };
 
         # Vendored from upstream's `cable/unix/sesh.toml` (hence the absence
