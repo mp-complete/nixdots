@@ -460,22 +460,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-master": {
-      "locked": {
-        "lastModified": 1772118580,
-        "narHash": "sha256-s3vrbTmppTEF1GEwXo1N5d9JujHnUcbTDdZKgOysMno=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "360b78b5de92154bbe2ae12a79eea01b35b2f5ec",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "360b78b5de92154bbe2ae12a79eea01b35b2f5ec",
-        "type": "github"
-      }
-    },
     "nixpkgs-stable": {
       "locked": {
         "lastModified": 1782847189,
@@ -574,7 +558,6 @@
         "nixos-hardware": "nixos-hardware",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs_3",
-        "nixpkgs-master": "nixpkgs-master",
         "noctalia": "noctalia",
         "sops-nix": "sops-nix",
         "worktrunk-flake": "worktrunk-flake",
