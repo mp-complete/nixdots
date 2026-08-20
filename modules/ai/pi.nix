@@ -29,6 +29,20 @@ let
     "pi-web-access" # web search, URL/repo/PDF/video access
   ];
 
+  # Headless variant for the `pi-agent` daemon (modules/ai/pi-agent.nix).
+  #
+  # THE RULE: every extension that can block waiting on a human must stay out,
+  # or an unattended run hangs until `TimeoutStartSec` kills it. Deliberately
+  # excluded: pi-catppuccin (TUI theme), rpiv-todo, rpiv-btw,
+  # rpiv-ask-user-question, edb-agent-steer, pi-interview.
+  daemonExtensions = [
+    "pi-hermes-memory" # cross-run memory + session search (isolated agent dir)
+    "pi-web-access" # fetch docs/URLs — most doc-drift jobs want this
+    "pi-copilot-discovery" # dynamic model discovery
+    "pi-nested-agent-md" # nested AGENTS.md on file reads
+    "notify" # push job outcomes to Gotify/ntfy
+  ];
+
   # Shared pi wrapper body. `extNames` picks which registry specs to build
   # (lazily, with the wrap-time pkgs) into repeated `--extension` flags. Both
   # variants share this *module* — no wrap-of-a-wrap — so each is a single
@@ -154,6 +168,9 @@ in
   # built by `nix flake check`).
   flake.wrappers.pi-desktop = mkPi desktopExtensions;
   flake.wrappers.pi-wsl = mkPi wslExtensions;
+
+  # Headless wrapper consumed by the `pi-agent` bucket (`nix build .#pi-daemon`).
+  flake.wrappers.pi-daemon = mkPi daemonExtensions;
 
   # Gate option declared in `base` (always imported on every host) so the
   # desktop-core / wsl buckets can install pi only when the ai bucket has
