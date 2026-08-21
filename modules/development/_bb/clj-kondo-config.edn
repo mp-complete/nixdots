@@ -1,0 +1,7 @@
+;; clj-kondo / clojure-lsp settings for ~/.config/babashka, the little project
+;; that holds the babashka prelude and the scratch buffer.
+;;
+;; miles.bb is a library for one-liners and scratch snippets: nothing in this
+;; "project" consumes most of it, so clojure-lsp's unused-public-var would flag
+;; every helper. Off here only -- it is a genuinely useful linter in real code.
+{:linters {:clojure-lsp/unused-public-var {:level :off}}}

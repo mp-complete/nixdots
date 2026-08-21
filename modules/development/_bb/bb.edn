@@ -1,0 +1,57 @@
+;; Global babashka tasks, and the project definition for ~/.config/babashka
+;; itself.
+;;
+;; The tasks are not picked up automatically -- babashka only looks for a
+;; bb.edn in the current directory -- so they are reached explicitly with `bb
+;; --config`, wired to the `bbg` / `bbnew` fish abbreviations in
+;; modules/development/clojure.nix.
+;;
+;; :paths is what makes the editor work. clojure-lsp walks up from a buffer
+;; looking for a bb.edn, then gets its classpath from `bb print-deps --format
+;; classpath`. "src" puts miles.bb on it, so `(require '[miles.bb :refer
+;; [in-lines]])` in a scratch buffer resolves; "." makes scratch.clj part of
+;; the project rather than a loose file.
+;;
+;; Read with clojure.edn: no #(...) reader macros and no #"regex" literals.
+{:paths ["." "src"]
+ :tasks
+ {:requires ([babashka.fs :as fs]
+             [clojure.string :as str])
+
+  :init (def scripts-dir (fs/expand-home "~/bb"))
+
+  new
+  {:doc "Scaffold an executable bb script in ~/bb. Usage: bbg new <name>"
+   :task (let [name (first *command-line-args*)]
+           (when-not name
+             (binding [*out* *err*] (println "usage: bbg new <name>"))
+             (System/exit 2))
+           (let [f (fs/file scripts-dir name)]
+             (when (fs/exists? f)
+               (binding [*out* *err*] (println "already exists:" (str f)))
+               (System/exit 1))
+             (fs/create-dirs scripts-dir)
+             (spit f (str "#!/usr/bin/env bb\n"
+                          ";; " name " -- describe me\n\n"
+                          "(require '[babashka.fs :as fs]\n"
+                          "         '[babashka.process :refer [shell]]\n"
+                          "         '[clojure.string :as str])\n\n"
+                          "(defn -main [& args]\n"
+                          "  (println \"hello from " name "\" args))\n\n"
+                          "(apply -main *command-line-args*)\n"))
+             (fs/set-posix-file-permissions f "rwxr-xr-x")
+             (println (str f))))}
+
+  scripts
+  {:doc "List the scripts in ~/bb with their description line"
+   :task (if-not (fs/exists? scripts-dir)
+           (binding [*out* *err*] (println "no such directory:" (str scripts-dir)))
+           (doseq [f (sort (fs/list-dir scripts-dir))
+                   :when (and (fs/regular-file? f) (fs/executable? f))]
+             (let [doc (->> (str/split-lines (slurp (fs/file f)))
+                            (drop 1)
+                            (filter (fn [l] (str/starts-with? l ";;")))
+                            first)]
+               (println (format "%-24s %s"
+                                (fs/file-name f)
+                                (str/triml (str/replace (or doc "") ";" "")))))))}}}
