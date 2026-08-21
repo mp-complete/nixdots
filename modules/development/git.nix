@@ -85,6 +85,9 @@
           "venv/"
           ".direnv"
           ".envrc"
+          "/.lsp"
+          "/.clj-kondo"
+          ".nrepl-port"
         ];
       };
       programs.gh.enable = true;
