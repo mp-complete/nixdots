@@ -26,13 +26,21 @@ now=$(date +%s)
 # helpers
 # ---------------------------------------------------------------------------
 
-# Every pi config dir on this host: the default one plus the `configDir`
-# variants the wrapper builds (`pi-msft` -> ~/.config/pi-msft), whose sessions
-# and live files are separate trees.
+# Every pi *agent dir* on this host -- the directory that holds `sessions/`
+# and pi-presence's `live/`, i.e. exactly what `PI_CODING_AGENT_DIR` points
+# at. Two shapes exist and they are not the same depth:
+#
+#   default            $HOME/.pi/agent        (pi appends `agent/` itself)
+#   wrapper configDir  $HOME/.config/pi-msft  (the wrapper sets the dir as-is,
+#                                              see modules/ai/pi.nix)
+#
+# So the glob must not have a trailing `/agent`; requiring `sessions/` or
+# `live/` keeps unrelated `~/.config/pi-*` dirs out.
 agent_dirs() {
     local d
-    for d in "$HOME/.pi/agent" "$HOME"/.config/pi-*/agent; do
-        [ -d "$d" ] && printf '%s\n' "$d"
+    for d in "$HOME/.pi/agent" "$HOME"/.config/pi-*; do
+        [ -d "$d/sessions" ] || [ -d "$d/live" ] || continue
+        printf '%s\n' "$d"
     done
 }
 

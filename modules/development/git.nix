@@ -100,13 +100,7 @@
           expansion = "lg";
         };
 
-        # The three git invocations that are typed verbatim, with no arguments
-        # to vary. From atuin: `git pull` 57, `git fetch --all` 26,
-        # `git fetch origin` 6 (plus a handful with a branch appended, which
-        # still works -- the abbr expands on the space before the branch name).
-        # Deliberately no `gst`/`gpu`: `git s` already exists as a git alias
-        # (above) and `git push` is only 12 uses, both below the bar the other
-        # abbrs in this config cleared.
+        ga = "git add";
         gp = "git pull";
         gfa = "git fetch --all";
         gfo = "git fetch origin";

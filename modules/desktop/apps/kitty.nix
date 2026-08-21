@@ -1,4 +1,9 @@
 { self, config, ... }:
+let
+  # The flake-parts `config`, captured before the wrapper module below shadows
+  # the name with its own `config`.
+  flakeCfg = config;
+in
 {
   flake.wrappers.kitty =
     {
@@ -8,9 +13,35 @@
       lib,
       ...
     }:
+    let
+      # Dispatcher behind the leader-mode television bindings; see the header
+      # comment in _kitty/tv.bash for why they cannot be written inline.
+      # `runtimeInputs` carries only kitty itself, for `kitten clipboard` --
+      # this is the same derivation as `package` below, not a second copy.
+      # `tv` and `pi` are intentionally left to PATH.
+      tvDispatch = pkgs.writeShellApplication {
+        name = "kitty-tv";
+        runtimeInputs = [ pkgs.kitty ];
+        text = builtins.readFile ./_kitty/tv.bash;
+      };
+    in
     {
       imports = [ wlib.wrapperModules.kitty ];
       package = pkgs.kitty;
+
+      # Self-contained, mirroring the tmux wrapper (shell/tmux.nix): windows
+      # spawned by `launch` inherit *kitty's* environment, not a login shell's,
+      # so the television bindings below would break on a host that happens not
+      # to install tv. runtimePkgs is appended to PATH, so the globally
+      # installed tv (shell/television.nix) still wins -- this is only the
+      # floor. The *wrapped* television is used deliberately: `pkgs.television`
+      # on its own has no config, channels or theme, so every `tv <channel>`
+      # here would fail against it.
+      runtimePkgs = [
+        pkgs.jq
+        (flakeCfg.flake.wrappers.television.wrap { inherit pkgs; })
+        tvDispatch
+      ];
       themeFile = "Catppuccin-Macchiato";
       font = {
         name = "DepartureMono Nerd Font";
@@ -104,6 +135,25 @@
         # Window creation
         "kitty_mod+return" = "launch --cwd current";
 
+        # Alt-backtick: "quake" overlay -- a throwaway shell in the focused
+        # window's cwd, for the one-off commands that would otherwise cost a
+        # whole new split. An overlay covers the window it was launched from
+        # and disappears the moment its process exits, so C-d/`exit` dismisses
+        # it and nothing survives; that is kitty's equivalent of tmux's
+        # `display-popup -E`. No command is given, so kitty runs the default
+        # shell. Mirrors `M-\`` in shell/tmux.nix. kitty names ordinary keys
+        # by their literal Unicode character, so this is a backtick and not
+        # `grave` -- XKB names are only accepted for keys kitty does not
+        # already know (see kitty's mapping.rst, "Syntax for specifying keys").
+        "alt+`" = "launch --type=overlay --cwd=current";
+
+        # Alt-p: pi in a new tab, in the focused window's cwd. `pi` is resolved
+        # from PATH rather than pinned to a store path because which wrapper is
+        # installed differs per host (pi-desktop vs pi-wsl, see modules/ai/pi.nix),
+        # so the kitty wrapper must not depend on either. Mirrors `M-p` in
+        # shell/tmux.nix.
+        "alt+p" = "launch --type=tab --cwd=current pi";
+
         # Layout switching
         "kitty_mod+space" = "next_layout";
         "kitty_mod+tab" = "last_used_layout";
@@ -121,6 +171,15 @@
       # <C-a> in nvim / start-of-line in the shell (tmux send-prefix). The active
       # mode name shows as a LEADER lamp in the status bar (tab_bar.py reads
       # mappings.current_keyboard_mode_name).
+      #
+      # The television bindings reuse the letters the tmux wrapper already binds
+      # under its own C-a prefix (shell/tmux.nix), so the muscle memory
+      # transfers: f files, / text, e nixdots, C-g branches, C-f log, P pi
+      # sessions. All are `--type=overlay`, kitty's closest analogue to
+      # `display-popup -E`. The tmux-only pickers (`b` sesh, `w` tmux-windows,
+      # `C-w` worktrunk) are deliberately absent: those channels act via `tmux
+      # switch-client`, which does nothing outside a server.
+      #
       #   leader Ctrl+a  send a literal Ctrl+a to the pane (<C-a> in nvim)
       #   leader+g  lazygit in an overlay (popup) window, in the current cwd
       #   leader+z  zoom the active window (toggle the stack layout)
@@ -130,6 +189,12 @@
       #   leader+%  vertical split   (US layout: shift+5)
       #   leader+"  horizontal split (US layout: shift+apostrophe)
       #   leader+1..9  switch to tab 1..9
+      #   leader+f  files under the cwd, opened in $EDITOR
+      #   leader+/  ripgrep the cwd, opened in $EDITOR at the match
+      #   leader+e  this flake, from anywhere
+      #   leader+ctrl+g  git branches (checkout/delete/merge/rebase)
+      #   leader+ctrl+f  git log; Enter copies the sha to the clipboard
+      #   leader+P  pi sessions; Enter resumes the session in that tab
       extraConfig =
         let
           leader = "ctrl+a";
@@ -137,7 +202,7 @@
         ''
           map --new-mode leader --on-action end --on-unknown end ${leader}
           map --mode leader ${leader} send_key ${leader}
-          map --mode leader g launch --type=tab --cwd=current ${pkgs.lazygit}/bin/lazygit
+          map --mode leader g launch --type=overlay --cwd=current ${pkgs.lazygit}/bin/lazygit
           map --mode leader z toggle_layout stack
           map --mode leader r start_resizing_window
           map --mode leader c launch --type=tab --cwd=current
@@ -147,6 +212,21 @@
           ${lib.concatMapStringsSep "\n" (n: "map --mode leader ${toString n} goto_tab ${toString n}") (
             lib.range 1 9
           )}
+
+          # --- television (tv) pickers ---------------------------------
+          # Everything goes through the kitty-tv dispatcher; see
+          # _kitty/tv.bash. `--type=overlay` closes the picker as soon as it
+          # exits, so there is nothing to clean up on cancel.
+          map --mode leader f launch --type=overlay --cwd=current kitty-tv files
+          map --mode leader / launch --type=overlay --cwd=current kitty-tv text
+          map --mode leader e launch --type=overlay --cwd=current kitty-tv nixdots
+          map --mode leader ctrl+g launch --type=overlay --cwd=current kitty-tv git-branch
+          map --mode leader ctrl+f launch --type=overlay --cwd=current kitty-tv git-log
+
+          # A tab, not an overlay: on Enter the picker `exec`s pi over itself,
+          # so the chosen session should outlive the picker rather than sit in
+          # a transient overlay on top of an unrelated window.
+          map --mode leader shift+p launch --type=tab --cwd=current kitty-tv pi-sessions
         '';
     };
 
