@@ -3,17 +3,16 @@ let
   overlays = [
     inputs.llm-agents.overlays.shared-nixpkgs
 
-    # Temporary: hold pi at 0.83.0 (see overlays/pi-pin.nix).
-    (import ../../overlays/pi-pin.nix { inherit (inputs) llm-agents-pinned; })
+    # pi is packaged from lukasl-dev/pi.nix rather than llm-agents.nix; this
+    # provides `pkgs.pi-coding-agent` (see overlays/pi-coding-agent.nix).
+    (import ../../overlays/pi-coding-agent.nix { inherit (inputs) pi-nix; })
 
     # Bun 1.3.13 standalone executables produced by `bun build --compile`
-    # currently segfault on NixOS/WSL. Pi supports a Node-based build; Hunk
-    # needs Bun, so bundle its JavaScript and run it with the working Bun
-    # runtime instead of embedding Bun in a standalone executable.
+    # currently segfault on NixOS/WSL. Hunk needs Bun, so bundle its
+    # JavaScript and run it with the working Bun runtime instead of embedding
+    # Bun in a standalone executable.
     (final: prev: {
       llm-agents = prev.llm-agents // {
-        pi = prev.llm-agents.pi.override { useBun = false; };
-
         hunk =
           if final.stdenv.hostPlatform.system == "x86_64-linux" then
             prev.llm-agents.hunk.overrideAttrs (old: {

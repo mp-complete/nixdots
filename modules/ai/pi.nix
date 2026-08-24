@@ -111,7 +111,8 @@ let
       };
 
       config = {
-        package = pkgs.llm-agents.pi;
+        # pi itself, from lukasl-dev/pi.nix via overlays/pi-coding-agent.nix.
+        package = pkgs.pi-coding-agent;
 
         # Self-contained: pi's built-in `bash` tool and several extensions
         # shell out to these. Appended to PATH, so a global install still

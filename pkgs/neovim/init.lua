@@ -17,6 +17,10 @@ vim.loader.enable()
 
 -- Core options and leader keys
 require 'config.options'
+-- Diff/mergetool setup. Early and plugin-free: `git difftool`/`git mergetool`
+-- launch this config with `-d`, so the diff keymaps have to exist before lze
+-- gets a chance to lazy-load anything.
+require 'config.diff'
 require 'config.snacks'
 
 -- Load all plugin specs via lze (opt plugins only)

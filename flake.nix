@@ -26,15 +26,16 @@
       url = "github:milespossing/nix-wrapper-modules/fix/television-themes";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # Source of `hunk` and the other agents; pi itself comes from pi-nix.
     llm-agents = {
       url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # Pinned llm-agents.nix revision that packages pi 0.83.0, used by
-    # overlays/pi-pin.nix to hold pi back from the 429-prone 0.84.x releases.
-    # Remove together with that overlay.
-    llm-agents-pinned = {
-      url = "github:numtide/llm-agents.nix/9bd01c89b9175a394948e6ca7a40151931004833";
+    # pi, the terminal coding agent. Only the build logic is used: the version
+    # is overridden in pkgs/pi and the package is rebuilt against our nixpkgs
+    # by overlays/pi-coding-agent.nix, so `follows` keeps the closure shared.
+    pi-nix = {
+      url = "github:lukasl-dev/pi.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     niri = {

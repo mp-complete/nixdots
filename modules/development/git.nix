@@ -52,18 +52,51 @@
               ];
             }) config.git.forgejoUrls
           );
-          aliases = {
-            s = "status";
-            c = "checkout";
-            d = "diff";
-          };
           init.defaultBranch = "main";
           pull.rebase = false;
-          diff.tool = "nvimdiff";
+
+          # `histogram` is patience+ and handles the "moved block of similar
+          # lines" case (repeated `}`/`end`/list entries) that Myers shreds.
+          # Kept in sync with neovim's `diffopt` (pkgs/neovim/fnl/config/diff.fnl)
+          # so `git diff` and `git difftool` agree on where the hunks are.
+          diff.algorithm = "histogram";
           diff.colorMoved = "default";
+          diff.tool = "nvimdiff";
+          # `git difftool` otherwise asks "Launch 'nvimdiff' [Y/n]?" per file,
+          # which is pure noise when the tool is already the configured default.
+          # `git mergetool` keeps its prompt: there it's the last chance to skip
+          # a file before its conflict markers get rewritten.
+          difftool.prompt = false;
+
           merge.tool = "nvimdiff";
+          # zdiff3 shows the merge base between `|||||||` and `=======`, so a
+          # conflict says what *changed* on each side rather than just showing
+          # two final states. It also hoists lines common to both sides out of
+          # the conflict region, which shrinks most conflicts noticeably.
+          merge.conflictStyle = "zdiff3";
+          # Record how each conflict was resolved and replay it automatically
+          # the next time the same conflict shows up -- i.e. every rebase of a
+          # long-lived branch, where the same hunk conflicts once per commit.
+          rerere = {
+            enabled = true;
+            autoUpdate = true;
+          };
+
           http.postBuffer = 524288000;
-          mergetool.keepBackup = false;
+          mergetool = {
+            keepBackup = false;
+            # Feed the mergetool a MERGED buffer with the already-auto-resolved
+            # hunks collapsed, so the three panes only disagree where the
+            # conflict actually is.
+            hideResolved = true;
+            # git's vimdiff backend builds this layout: LOCAL / BASE / REMOTE
+            # across the top, the MERGED buffer (the one you edit and save)
+            # full-width below. Spelled out because it is the knob to turn if
+            # the 4-way split is too cramped -- e.g. "LOCAL,MERGED,REMOTE" for
+            # a 3-pane view that drops BASE, or "@LOCAL,REMOTE+BASE,MERGED" to
+            # put BASE in a tab. See `git help mergetool`, MERGETOOL_VIMDIFF.
+            nvimdiff.layout = "LOCAL,BASE,REMOTE / MERGED";
+          };
           push.autoSetupRemote = true;
           core = {
             editor = "nvim";
@@ -103,7 +136,14 @@
           expansion = "lg";
         };
 
+        gs = "git status";
         ga = "git add";
+        # difftool/mergetool are long to type and the tool is worth having
+        # visible in the buffer -- these expand in place, so appending
+        # `-t bcompare` (modules/wsl/beyond-compare.nix) or a pathspec is just
+        # more typing on the same line.
+        gdt = "git difftool";
+        gmt = "git mergetool";
         gp = "git pull";
         gfa = "git fetch --all";
         gfo = "git fetch origin";
