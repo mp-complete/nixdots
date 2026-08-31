@@ -1,4 +1,4 @@
-# pi comes from lukasl-dev/pi.nix (`inputs.pi-nix`), not from llm-agents.nix.
+# pi comes from lukasl-dev/pi.nix (`inputs.pi-nix`).
 #
 # The package itself is built with *our* nixpkgs so pi shares the host's
 # nodejs closure, and with our own version data so it tracks v0.84.3 rather

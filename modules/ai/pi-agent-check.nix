@@ -28,8 +28,8 @@
           (
             { lib, ... }:
             {
-              # perSystem `pkgs` already carries the llm-agents overlays that
-              # hosts get via the `base` bucket (modules/flake/llm-agents.nix).
+              # perSystem `pkgs` already carries the overlays that hosts get
+              # via the `base` bucket (modules/flake/package-set.nix).
               nixpkgs.pkgs = pkgs;
               # Skips bootloader/fileSystems requirements; we never build the
               # toplevel, only the units.

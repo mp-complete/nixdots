@@ -16,6 +16,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
+    matt-pocock-skills = {
+      url = "github:mattpocock/skills";
+      flake = false;
+    };
 
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
@@ -29,11 +33,6 @@
       # reads, so a configured theme silently degrades to the builtin default.
       # Revert to `github:BirdeeHub/nix-wrapper-modules` once that is merged.
       url = "github:milespossing/nix-wrapper-modules/fix/television-themes";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    # Source of `hunk` and the other agents; pi itself comes from pi-nix.
-    llm-agents = {
-      url = "github:numtide/llm-agents.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # pi, the terminal coding agent. Only the build logic is used: the version

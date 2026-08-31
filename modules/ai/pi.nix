@@ -29,7 +29,6 @@ let
     "pi-windows-tools" # Windows shell execution, path conversion, and WSL bridge
     "pi-chrome-use" # CDP-only browser execution against Windows Edge
     "agent-browser-edge-bridge" # verify and route browser_execute to dedicated Edge
-    "pi-web-access" # web search, URL/repo/PDF/video access
   ];
 
   # Headless variant for the `pi-agent` daemon (modules/ai/pi-agent.nix).
@@ -39,7 +38,6 @@ let
   # excluded: pi-catppuccin (TUI theme), rpiv-todo, rpiv-btw,
   # rpiv-ask-user-question, edb-agent-steer, pi-interview.
   daemonExtensions = [
-    "pi-web-access" # fetch docs/URLs — most doc-drift jobs want this
     "pi-copilot-discovery" # dynamic model discovery
     "pi-nested-agent-md" # nested AGENTS.md on file reads
     "pi-scan-guard" # hard-block unbounded scans (no UI to approve them)

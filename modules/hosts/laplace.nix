@@ -19,8 +19,6 @@
         system.stateVersion = "25.11";
 
         home-manager.users.miles = {
-          my.ai.aider.enable = true;
-          my.ai.opencode.enable = true;
           my.ai.copilot-cli.enable = true;
         };
       }

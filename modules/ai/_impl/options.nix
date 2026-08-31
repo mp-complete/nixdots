@@ -1,4 +1,4 @@
-{ lib, pkgs, ... }:
+{ lib, ... }:
 let
   inherit (lib) mkOption mkEnableOption types;
 
@@ -39,7 +39,7 @@ let
       package = mkOption {
         type = types.nullOr types.package;
         default = null;
-        description = "Optional package providing the MCP server binary. Auto-added to OpenCode's wrapper PATH.";
+        description = "Optional package providing the MCP server binary. Auto-added to Copilot CLI's wrapper PATH.";
       };
     };
   };
@@ -47,47 +47,6 @@ let
 in
 {
   options.my.ai = {
-    opencode = {
-      enable = mkEnableOption "OpenCode AI coding agent";
-      lspServers = mkOption {
-        type = types.listOf types.package;
-        default = with pkgs; [
-          nixd
-          lua-language-server
-          gopls
-          typescript-language-server
-          clojure-lsp
-        ];
-        description = "LSP server packages to inject into OpenCode's PATH.";
-      };
-      extraPackages = mkOption {
-        type = types.listOf types.package;
-        default = [ ];
-        description = "Additional packages to inject into OpenCode's PATH (e.g. MCP server binaries).";
-      };
-      plugins = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = ''
-          OpenCode plugin packages. Each entry is an npm package name
-          (optionally with @version). Added to the "plugin" key in opencode.json.
-          OpenCode auto-installs plugins on startup.
-        '';
-        example = [
-          "opencode-notify"
-          "opencode-direnv"
-        ];
-      };
-      settings = mkOption {
-        type = types.attrsOf types.anything;
-        default = { };
-        description = ''
-          Additional OpenCode config keys merged into ~/.config/opencode/opencode.json.
-          Keys like "model", "provider", "tools", "permissions", etc.
-        '';
-      };
-    };
-
     copilot-cli = {
       enable = mkEnableOption "GitHub Copilot CLI";
       hooks = mkOption {
@@ -114,41 +73,10 @@ in
       };
     };
 
-    aider = {
-      enable = mkEnableOption "Aider AI pair programming";
-      extraConfig = mkOption {
-        type = types.attrsOf types.anything;
-        default = { };
-        description = ''
-          Additional aider config keys merged into ~/.aider.conf.yml.
-          See https://aider.chat/docs/config/aider_conf.html
-        '';
-      };
-    };
-
     mcp.servers = mkOption {
       type = types.attrsOf mcpServerType;
       default = { };
-      description = "MCP servers shared across agents. Written to OpenCode's config and Copilot CLI's mcp-config.json.";
-    };
-
-    rules = {
-      global = mkOption {
-        type = types.lines;
-        default = "";
-        description = ''
-          Global rules written to ~/.config/opencode/AGENTS.md.
-          Also provided to Aider as a read-only conventions file when aider is enabled.
-        '';
-      };
-      instructionFiles = mkOption {
-        type = types.listOf types.str;
-        default = [ ];
-        description = ''
-          Additional instruction file paths or globs for OpenCode's "instructions" config key.
-          Also added to Aider's "read" config when aider is enabled.
-        '';
-      };
+      description = "MCP servers written to Copilot CLI's mcp-config.json.";
     };
   };
 }

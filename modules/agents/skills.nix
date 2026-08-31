@@ -12,7 +12,22 @@
         "context-reflect"
       ];
 
-      # Opt-in skills, enabled via `skills.extra = [ "figma-to-spec" ];`.
+      # Matt Pocock's starter workflow. The user-facing entry points are
+      # grill-me, grill-with-docs, wayfinder, and diagnosing-bugs; the rest
+      # are their required supporting skills.
+      mattPocockSkills = [
+        "engineering/diagnosing-bugs"
+        "engineering/domain-modeling"
+        "engineering/grill-with-docs"
+        "engineering/prototype"
+        "engineering/research"
+        "engineering/setup-matt-pocock-skills"
+        "engineering/wayfinder"
+        "productivity/grill-me"
+        "productivity/grilling"
+      ];
+
+      # Opt-in local skills, enabled via `skills.extra = [ "figma-to-spec" ];`.
       availableSkills = [
         "figma-to-spec"
         "fluent-ui-v9"
@@ -30,8 +45,14 @@
       config = {
         programs.agent-skills = {
           enable = true;
-          sources.nixdots.path = ./_skills;
-          skills.enable = builtinSkills ++ config.skills.extra;
+          sources = {
+            nixdots.path = ./_skills;
+            matt-pocock = {
+              input = "matt-pocock-skills";
+              subdir = "skills";
+            };
+          };
+          skills.enable = builtinSkills ++ mattPocockSkills ++ config.skills.extra;
           targets.agents = {
             enable = true;
             structure = "link";

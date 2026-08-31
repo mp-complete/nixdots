@@ -89,8 +89,6 @@ in
         };
 
         home-manager.users.miles = {
-          my.ai.aider.enable = true;
-          my.ai.opencode.enable = true;
           my.ai.copilot-cli.enable = true;
           my.ai.copilot-cli.notifications.enable = true;
         };

@@ -2,7 +2,7 @@
 #
 # Each entry is an attrset matching the home-manager mcpServerType option shape.
 # Use mkLocalMcp for stdio servers and mkRemoteMcp for SSE/HTTP servers.
-# Set `package` on local servers to auto-inject their binary into OpenCode's PATH.
+# Set `package` on local servers to auto-inject their binary into Copilot CLI's PATH.
 final: prev:
 let
   aiLib = import ../../modules/home/ai/lib.nix {

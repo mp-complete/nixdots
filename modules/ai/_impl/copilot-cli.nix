@@ -9,7 +9,7 @@ let
   cop = cfg.copilot-cli;
 
   # Serialize a shared MCP server to Copilot CLI's format.
-  # Copilot uses { command, args, env, tools } whereas OpenCode uses { command: [cmd, ...args] }.
+  # Copilot uses separate command and args fields for local MCP servers.
   serializeMcp =
     _name: srv:
     let
