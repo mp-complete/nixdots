@@ -32,7 +32,7 @@
       environment.systemPackages = [ (config.flake.wrappers.worktrunk.wrap { inherit pkgs; }) ];
     };
 
-  # Its interactive-shell integration (the bash-init hook + the wt-sesh/wtc
+  # Its interactive-shell integration (the bash-init hook + the wt-sesh/wta/wtc
   # abbreviations) must run in the user's shell, so it stays in the shell layer
   # alongside fzf/zoxide/atuin/direnv. References the wrapped pkgs.worktrunk.
   flake.modules.homeManager.dev =
@@ -58,6 +58,12 @@
       # (`tvw` / tmux `prefix C-w`), which handle picking rather than typing.
       programs.fish.shellAbbrs = {
         wt-sesh = "wt switch --no-cd -x 'sesh connect {{ worktree_path }}' $(git branch | fzf | cut -c 3-)";
+        # Keep the branch before `--`; `sh -c` resolves the configured agent
+        # while using worktrunk's forward-compatible single-program form.
+        wta = {
+          expansion = "wt switch --create --base=@ --execute sh % -- -c 'exec \"$AGENT\"'";
+          setCursor = "%";
+        };
         wtc = "wt switch --no-cd -x 'sesh connect {{ worktree_path }}' -c";
         wtl = "wt list";
         wts = "wt switch";
