@@ -103,7 +103,7 @@ let
           `PI_CODING_AGENT_DIR` for the executable. The value is expanded at
           runtime, so shell variables such as `$HOME` or `$XDG_CONFIG_HOME`
           are ok. Pair this with `binName` to produce separately named pi
-          executables (e.g. `pi-msft` -> `$HOME/.config/pi-msft`). An
+          executables (e.g. `pi-work` -> `$HOME/.config/pi-work`). An
           explicitly set `PI_CODING_AGENT_DIR` in the environment wins.
         '';
       };
@@ -157,7 +157,7 @@ let
           esc-fn = x: x;
         };
 
-        # When the wrapper is renamed (e.g. to `pi-msft`), drop the original
+        # When the wrapper is renamed (e.g. to `pi-work`), drop the original
         # unwrapped `bin/pi` symlink so the final package only contains the
         # requested executable.
         filesToExclude = lib.mkIf (config.binName != baseNameOf config.exePath) [
@@ -201,8 +201,8 @@ in
         (outer.flake.wrappers.pi-desktop.wrap { inherit pkgs; })
         (outer.flake.wrappers.pi-desktop.wrap {
           inherit pkgs;
-          binName = "pi-msft";
-          configDir = "${config.home.homeDirectory}/.config/pi-msft";
+          binName = "pi-work";
+          configDir = "${config.home.homeDirectory}/.config/pi-work";
         })
       ];
     };

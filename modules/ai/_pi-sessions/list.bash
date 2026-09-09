@@ -31,7 +31,7 @@ now=$(date +%s)
 # at. Two shapes exist and they are not the same depth:
 #
 #   default            $HOME/.pi/agent        (pi appends `agent/` itself)
-#   wrapper configDir  $HOME/.config/pi-msft  (the wrapper sets the dir as-is,
+#   wrapper configDir  $HOME/.config/pi-work  (the wrapper sets the dir as-is,
 #                                              see modules/ai/pi.nix)
 #
 # So the glob must not have a trailing `/agent`; requiring `sessions/` or
