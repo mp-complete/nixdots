@@ -55,8 +55,15 @@ modules/flake/packages.nix     # nvim (callPackage) + pi-upstream; everything el
 - **pi variant chain**: composed at the **module level** in `modules/ai/pi.nix` —
   `pi-desktop`/`pi-wsl` share one inline wrapper module (a `mkPi extNames` helper)
   rather than wrapping a base wrapper, so each variant is a single flat wrapper
-  (not a wrapper-of-a-wrapper). Each uses the wrap-time nixpkgs
-  `pkgs.pi-coding-agent` directly.
+  (not a wrapper-of-a-wrapper). Each uses `pkgs.pi-coding-agent`, an alias
+  for Numtide's `llm-agents.packages.<system>.pi` in
+  `modules/flake/package-set.nix`. This is the upstream standalone Bun package,
+  with its own nixpkgs pin preserved for binary-cache compatibility. Extension
+  packages and wrapper utilities still use the host's package set.
+  Update Pi independently with `nix flake update llm-agents`, then
+  `nix build --no-link .#pi-wsl .#pi-desktop .#pi-daemon`. Numtide owns the
+  lockfile/model data; nothing is vendored under `pkgs/pi`. The Numtide cache
+  and signing key are configured in `modules/system/nix.nix`.
 - **pi extensions**: declared as pure-data specs in `pi.extensions.<name>`
   (one file per extension under `modules/ai/extensions/`), built lazily by
   `flake.lib.buildPiExtension pkgs spec` at wrap-time — so extensions never
@@ -88,6 +95,15 @@ modules/flake/packages.nix     # nvim (callPackage) + pi-upstream; everything el
 - `nix build .#<wrapper>` — build one wrapper in isolation.
 - `nix eval --raw .#nixosConfigurations.<host>.config.system.build.toplevel.drvPath`
   — fast "does it evaluate" check without building.
+
+For Pi, exercise the Edge bridge's real extension loader as well as its unit
+checks (no credentials or model calls). This catches Bun/jiti compatibility
+regressions that `pi --version` alone cannot detect:
+
+```bash
+PI_TEST_BINARY="$(nix eval --raw .#nixosConfigurations.hilbert.pkgs.pi-coding-agent.outPath)/bin/pi" \
+  node --test modules/ai/extensions/_local/agent-browser-edge-bridge/test/*.test.mjs
+```
 
 ## Findings: features dropped in the dendritic migration
 

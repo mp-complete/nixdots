@@ -35,12 +35,9 @@
       url = "github:milespossing/nix-wrapper-modules/fix/television-themes";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # pi, the terminal coding agent. Its overlay provides `pi-coding-agent`;
-    # `follows` keeps the package on the same nixpkgs revision as the hosts.
-    pi-nix = {
-      url = "github:lukasl-dev/pi.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Pi's standalone Bun package. Keep Numtide's own nixpkgs pin so we use
+    # its tested, cached package; update Pi with `nix flake update llm-agents`.
+    llm-agents.url = "github:numtide/llm-agents.nix";
     niri = {
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";

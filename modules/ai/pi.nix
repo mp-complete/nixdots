@@ -109,7 +109,7 @@ let
       };
 
       config = {
-        # pi itself, from lukasl-dev/pi.nix's overlay.
+        # Numtide's standalone Bun Pi, aliased by modules/flake/package-set.nix.
         package = pkgs.pi-coding-agent;
 
         # Self-contained: pi's built-in `bash` tool and several extensions

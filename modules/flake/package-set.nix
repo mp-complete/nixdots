@@ -1,8 +1,11 @@
 { inputs, ... }:
 let
   overlays = [
-    # Provide `pkgs.pi-coding-agent` from lukasl-dev/pi.nix.
-    inputs.pi-nix.overlays.default
+    # Alias Numtide's unchanged package, rather than rebuilding it against
+    # our nixpkgs, so all Pi wrappers retain upstream cache compatibility.
+    (final: _prev: {
+      pi-coding-agent = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system}.pi;
+    })
   ];
 in
 {

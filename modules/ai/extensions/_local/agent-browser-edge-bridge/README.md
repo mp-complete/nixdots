@@ -104,6 +104,18 @@ overrides.
 npm test
 ```
 
+The startup integration test is skipped unless `PI_TEST_BINARY` points to an
+unwrapped Pi executable. To exercise the actual Bun/jiti loader, run from the
+nixdots repository root after building `.#pi-wsl`:
+
+```bash
+PI_TEST_BINARY="$(nix eval --raw .#nixosConfigurations.hilbert.pkgs.pi-coding-agent.outPath)/bin/pi" \
+  node --test modules/ai/extensions/_local/agent-browser-edge-bridge/test/*.test.mjs
+```
+
+This launches Pi in an isolated directory without credentials or model calls
+and checks that the bridge's commands register. It does not start Edge.
+
 The Nix extension derivation and `pi-wsl` wrapper are the authoritative
 packaging checks. Live validation should confirm a visible dedicated Edge
 window, an `Edg/*` `/json/version` response, an accepted WebSocket connection,

@@ -9,9 +9,10 @@ import {
   resolveReachableEdgeEndpoint,
 } from "./cdp-endpoint.ts";
 
-const here =
-  (import.meta as { dirname?: string }).dirname ??
-  dirname(fileURLToPath(import.meta.url));
+// Pi's jiti loader rewrites import.meta.url reliably in both Node and Bun.
+// The casted import.meta.dirname expression can trigger a failing data-URL
+// import in the standalone Bun build.
+const here = dirname(fileURLToPath(import.meta.url));
 const BOOTSTRAP_SH = resolve(here, "..", "scripts", "bootstrap.sh");
 
 const STATUS_KEY = "ab-edge-bridge";
