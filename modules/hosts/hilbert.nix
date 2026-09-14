@@ -5,6 +5,7 @@
       "base"
       "dev"
       "ai"
+      "openclaw"
       "skills"
       "syncthing"
       "work"

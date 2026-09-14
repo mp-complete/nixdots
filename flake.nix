@@ -26,6 +26,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     sops-nix.url = "github:Mic92/sops-nix";
+    nix-openclaw = {
+      url = "github:openclaw/nix-openclaw";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+    };
     nix-wrapper-modules = {
       # Temporarily pinned to a fork carrying the fix in
       # <https://github.com/milespossing/nix-wrapper-modules/tree/fix/television-themes>:
