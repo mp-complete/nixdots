@@ -1,10 +1,12 @@
 { inputs, ... }:
 let
   overlays = [
-    # Alias Numtide's unchanged package, rather than rebuilding it against
-    # our nixpkgs, so all Pi wrappers retain upstream cache compatibility.
+    # Use Numtide's Node runtime variant. The default Bun-compiled pi 0.85.1
+    # binary segfaults before `--version` or `--help` can produce output.
     (final: _prev: {
-      pi-coding-agent = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system}.pi;
+      pi-coding-agent =
+        inputs.llm-agents.packages.${final.stdenv.hostPlatform.system}.pi.override
+          { useBun = false; };
     })
   ];
 in
