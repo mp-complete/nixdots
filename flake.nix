@@ -35,9 +35,8 @@
       url = "github:milespossing/nix-wrapper-modules/fix/television-themes";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # pi, the terminal coding agent. Only the build logic is used: the version
-    # is overridden in pkgs/pi and the package is rebuilt against our nixpkgs
-    # by overlays/pi-coding-agent.nix, so `follows` keeps the closure shared.
+    # pi, the terminal coding agent. Its overlay provides `pi-coding-agent`;
+    # `follows` keeps the package on the same nixpkgs revision as the hosts.
     pi-nix = {
       url = "github:lukasl-dev/pi.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -46,10 +45,10 @@
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    noctalia = {
-      url = "github:noctalia-dev/noctalia-shell";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # Track the newest revision known to be available from Noctalia's Cachix.
+    # Keep its pinned nixpkgs: overriding it changes the derivation and misses
+    # the upstream binary cache.
+    noctalia.url = "github:noctalia-dev/noctalia/cachix";
     worktrunk-flake = {
       url = "github:max-sixty/worktrunk";
       inputs.nixpkgs.follows = "nixpkgs";

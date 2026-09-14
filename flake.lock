@@ -481,6 +481,19 @@
     },
     "nixpkgs_4": {
       "locked": {
+        "lastModified": 1788614874,
+        "narHash": "sha256-PRK1fSEiAcO29DkUoOlsVLGYRK3h1YKVr+qQJB0VcYQ=",
+        "rev": "c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0",
+        "type": "tarball",
+        "url": "https://releases.nixos.org/nixos/unstable/nixos-26.11pre1068089.c043004d1c69/nixexprs.tar.zst"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://channels.nixos.org/nixos-unstable/nixexprs.tar.zst"
+      }
+    },
+    "nixpkgs_5": {
+      "locked": {
         "lastModified": 1782175435,
         "narHash": "sha256-EMzXKmnOtBQ2MnvpiNOm7E+kOMvdPrIKaeg52Tip2Uk=",
         "owner": "NixOS",
@@ -497,21 +510,20 @@
     },
     "noctalia": {
       "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
+        "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1788182714,
-        "narHash": "sha256-B5+PAwonH6djjRLWcWkneTDhQvDx9kN7+8whC6iVlDE=",
+        "lastModified": 1788886125,
+        "narHash": "sha256-5rgQFUGr8GXYyyuy8ynrN39WfZzSiO/wqGWjELBOkEY=",
         "owner": "noctalia-dev",
-        "repo": "noctalia-shell",
-        "rev": "5fa51ad312206eba70ccd32e6e6ce43553693361",
+        "repo": "noctalia",
+        "rev": "d6607b4eafbb92f6d494ebed3e296d4b741c0b58",
         "type": "github"
       },
       "original": {
         "owner": "noctalia-dev",
-        "repo": "noctalia-shell",
+        "ref": "cachix",
+        "repo": "noctalia",
         "type": "github"
       }
     },
@@ -525,11 +537,11 @@
         "systems": "systems_2"
       },
       "locked": {
-        "lastModified": 1788173678,
-        "narHash": "sha256-u0YZmQ8Z5luYELFHA6GAQ68HT2Dh5kU3sMFLQ68+2P0=",
+        "lastModified": 1788857715,
+        "narHash": "sha256-QrGCBqM2ZBH0e5g3fxTPVwX/vi5piAzm15T1JT65jbg=",
         "owner": "lukasl-dev",
         "repo": "pi.nix",
-        "rev": "2a11906417b5f2bd9e8f9130da31dfbdfeffecda",
+        "rev": "f41e1136297ccd039ead5131739da85d0ac4a77c",
         "type": "github"
       },
       "original": {
@@ -582,7 +594,7 @@
     },
     "sops-nix": {
       "inputs": {
-        "nixpkgs": "nixpkgs_4"
+        "nixpkgs": "nixpkgs_5"
       },
       "locked": {
         "lastModified": 1786629091,

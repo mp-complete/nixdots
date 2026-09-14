@@ -109,7 +109,7 @@ let
       };
 
       config = {
-        # pi itself, from lukasl-dev/pi.nix via overlays/pi-coding-agent.nix.
+        # pi itself, from lukasl-dev/pi.nix's overlay.
         package = pkgs.pi-coding-agent;
 
         # Self-contained: pi's built-in `bash` tool and several extensions

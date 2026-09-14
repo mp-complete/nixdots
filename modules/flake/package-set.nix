@@ -2,7 +2,7 @@
 let
   overlays = [
     # Provide `pkgs.pi-coding-agent` from lukasl-dev/pi.nix.
-    (import ../../overlays/pi-coding-agent.nix { inherit (inputs) pi-nix; })
+    inputs.pi-nix.overlays.default
   ];
 in
 {

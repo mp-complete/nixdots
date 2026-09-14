@@ -23,7 +23,7 @@
       {
         "/mnt/media" = share "media";
         "/mnt/photos" = share "photos";
-        "/mnt/neumann/downloads" = share "downloads";
+        "/mnt/downloads" = share "downloads";
       };
   };
 }
