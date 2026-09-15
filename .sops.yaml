@@ -1,5 +1,6 @@
 keys:
   - &age_generic age12dpenp32wdmzwg975gxytalp6acglqq37aky5vlkkztrmxy4xpuqcxza3a
+  - &age_hilbert age1yeyujmqe90xkul090yapvz37y7u2rqznd33lruh3m7tm82plvuzqcyf34u
 creation_rules:
   - path_regex: .*\.enc\.(yaml|json|env|ini)$
     key_groups:
@@ -9,3 +10,4 @@ creation_rules:
     key_groups:
       - age:
           - *age_generic
+          - *age_hilbert
