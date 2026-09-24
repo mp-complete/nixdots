@@ -72,7 +72,7 @@ in
               position = _: {
                 props = {
                   x = 2560;
-                  y = -8;
+                  y = -500;
                 };
               };
               transform = "90";
