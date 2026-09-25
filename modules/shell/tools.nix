@@ -29,6 +29,7 @@
         icons = "auto";
         git = true;
       };
+
       programs.direnv = {
         enable = true;
         enableBashIntegration = true;
@@ -84,6 +85,7 @@
         tokei
         sqlite
         parallel
+        unzip
       ];
     };
 }
